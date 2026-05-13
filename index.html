@@ -3,238 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BAFS 商業大賽 - 即時對戰</title>
+    <title>BAFS 商業大賽 - 卡通同步對戰版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap');
         
         body { 
             font-family: 'Noto Sans TC', sans-serif; 
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            color: #f8fafc;
+            background: linear-gradient(135deg, #7dd3fc 0%, #c4b5fd 100%);
+            color: #1e293b;
             overflow-x: hidden;
+            min-height: 100vh;
         }
 
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        .cartoon-panel {
+            background: white;
+            border: 4px solid #1e293b;
+            border-radius: 2rem;
+            box-shadow: 8px 8px 0px #1e293b;
+        }
+
+        .cartoon-btn {
+            background: #6366f1;
+            color: white;
+            border: 3px solid #1e293b;
+            border-radius: 1.25rem;
+            box-shadow: 4px 4px 0px #1e293b;
+            transition: all 0.1s;
+        }
+
+        .cartoon-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #1e293b;
         }
 
         .hidden { display: none !important; }
         
-        .progress-glow {
-            box-shadow: 0 0 15px rgba(99, 102, 241, 0.6);
-            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        .progress-bar-container {
+            background: #e2e8f0;
+            border: 3px solid #1e293b;
+            border-radius: 1rem;
+            overflow: hidden;
         }
 
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+        .progress-fill {
+            background: linear-gradient(90deg, #60a5fa, #a855f7);
+            border-right: 3px solid #1e293b;
+            transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
-
-        .option-btn {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        .bubble {
+            position: fixed;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            z-index: -1;
+            animation: floatBubble 10s infinite ease-in-out;
         }
 
-        .option-btn:active { transform: scale(0.97); }
-
-        .floating-score {
-            pointer-events: none;
-            animation: floatUp 1s ease-out forwards;
+        @keyframes floatBubble {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.1); }
         }
 
-        @keyframes floatUp {
-            0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-50px); opacity: 0; }
+        .text-stroke {
+            -webkit-text-stroke: 1.5px #1e293b;
+            paint-order: stroke fill;
         }
 
-        /* 自定義捲軸 */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        .setting-input {
+            border: 3px solid #1e293b;
+            border-radius: 1rem;
+            padding: 0.5rem;
+            text-align: center;
+            font-weight: 900;
+            width: 80px;
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 
-    <!-- 粒子背景裝飾 -->
-    <div class="fixed inset-0 pointer-events-none overflow-hidden opacity-20">
-        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500 rounded-full blur-[120px]"></div>
-        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500 rounded-full blur-[120px]"></div>
+    <div class="fixed inset-0 pointer-events-none overflow-hidden">
+        <div class="bubble w-20 h-20 top-[10%] left-[5%]" style="animation-delay: 0s"></div>
+        <div class="bubble w-32 h-32 bottom-[15%] right-[10%]" style="animation-delay: 2s"></div>
+        <div class="bubble w-16 h-16 top-[40%] right-[5%]" style="animation-delay: 4s"></div>
     </div>
 
-    <!-- 載入中 -->
     <div id="loading-screen" class="text-center relative z-10">
         <div class="relative w-20 h-20 mx-auto mb-6">
-            <div class="absolute inset-0 border-4 border-indigo-500/20 rounded-full"></div>
-            <div class="absolute inset-0 border-4 border-t-indigo-500 rounded-full animate-spin"></div>
+            <div class="absolute inset-0 border-8 border-white/40 rounded-full"></div>
+            <div class="absolute inset-0 border-8 border-t-indigo-600 rounded-full animate-spin"></div>
         </div>
-        <p class="text-indigo-200 font-black tracking-widest animate-pulse">連線中...</p>
+        <p class="text-indigo-900 font-black tracking-widest text-xl">準備派對中...</p>
     </div>
 
-    <!-- 遊戲大廳 (Lobby) -->
-    <div id="lobby-view" class="hidden w-full max-w-md glass-panel rounded-[2.5rem] p-8 space-y-8 relative z-10">
+    <!-- Lobby View -->
+    <div id="lobby-view" class="hidden w-full max-w-md cartoon-panel p-8 space-y-6 relative z-10">
         <div class="text-center">
-            <div class="inline-block relative">
-                <div class="absolute inset-0 bg-indigo-500 blur-2xl opacity-50"></div>
-                <div class="relative bg-gradient-to-br from-indigo-500 to-purple-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-2xl rotate-3">
-                    <i class="fas fa-trophy text-white text-4xl"></i>
-                </div>
+            <div class="inline-block bg-yellow-300 border-4 border-slate-800 p-4 rounded-3xl rotate-3 shadow-[6px_6px_0px_#1e293b] mb-4">
+                <i class="fas fa-rocket text-slate-800 text-4xl"></i>
             </div>
-            <h1 class="text-4xl font-black text-white tracking-tighter">BAFS 商業大賽</h1>
-            <div class="inline-flex items-center gap-2 bg-white/5 px-4 py-1.5 rounded-full mt-3 border border-white/10">
-                <span class="flex h-2 w-2">
-                    <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                </span>
-                <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                    全服在線：<span id="global-online-count" class="text-white">0</span> 人
+            <h1 class="text-4xl font-black text-slate-800 tracking-tighter text-stroke text-white">BAFS 商業大派對</h1>
+            <div class="inline-flex items-center gap-2 bg-indigo-100 px-4 py-1.5 rounded-full mt-3 border-2 border-indigo-200">
+                <span class="flex h-2 w-2 bg-green-500 rounded-full animate-pulse"></span>
+                <p class="text-indigo-800 text-xs font-bold uppercase tracking-widest">
+                    在線玩家：<span id="global-online-count" class="font-black">0</span>
                 </p>
             </div>
         </div>
 
-        <div class="space-y-5">
-            <div class="group">
-                <input type="text" id="player-name" placeholder="輸入你的競賽名稱" 
-                    class="w-full p-5 bg-white/5 border-2 border-white/10 focus:border-indigo-500 rounded-2xl outline-none transition-all font-bold text-center text-xl placeholder:text-slate-600">
+        <div class="space-y-4">
+            <div class="space-y-1">
+                <label class="text-xs font-black text-slate-500 ml-2 uppercase">玩家暱稱</label>
+                <input type="text" id="player-name" placeholder="輸入你的暱稱" 
+                    class="w-full p-4 bg-slate-50 border-4 border-slate-800 rounded-2xl outline-none font-bold text-center text-xl placeholder:text-slate-400">
             </div>
-            <button id="btn-create" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-5 rounded-2xl shadow-xl shadow-indigo-900/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3">
-                <i class="fas fa-plus-circle"></i> 建立新賽事
+
+            <div class="bg-indigo-50 border-4 border-slate-800 p-4 rounded-2xl flex items-center justify-between shadow-[4px_4px_0px_#1e293b]">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-list-ol text-indigo-600"></i>
+                    <span class="font-black text-slate-700">比賽題數</span>
+                </div>
+                <input type="number" id="question-count-input" min="1" max="35" value="10" class="setting-input">
+            </div>
+            
+            <button id="btn-create" class="w-full cartoon-btn bg-indigo-500 py-4 text-xl font-black flex items-center justify-center gap-3">
+                <i class="fas fa-star text-yellow-300"></i> 建立房間
             </button>
-            <div class="relative py-2 flex items-center">
-                <div class="flex-grow border-t border-white/5"></div>
-                <span class="px-4 text-xs font-black text-slate-600 uppercase">或是加入代碼</span>
-                <div class="flex-grow border-t border-white/5"></div>
+            
+            <div class="relative py-1 flex items-center">
+                <div class="flex-grow border-t-4 border-slate-200"></div>
+                <span class="px-4 text-sm font-black text-slate-400">或</span>
+                <div class="flex-grow border-t-4 border-slate-200"></div>
             </div>
+
             <div class="flex flex-col gap-3">
-                <input type="text" id="join-code" placeholder="房間代碼" 
-                    class="w-full p-4 bg-white/5 border-2 border-white/10 focus:border-emerald-500 rounded-2xl outline-none font-mono font-black text-center uppercase tracking-[0.5em] text-xl">
-                <button id="btn-join" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-5 rounded-2xl shadow-xl shadow-emerald-900/20 transition-all active:scale-[0.98]">
-                    立即參賽
+                <input type="text" id="join-code" placeholder="請輸入代碼" 
+                    class="w-full p-3 bg-slate-50 border-4 border-slate-800 rounded-2xl outline-none font-mono font-black text-center uppercase tracking-widest text-xl">
+                <button id="btn-join" class="w-full cartoon-btn bg-emerald-400 text-slate-800 py-4 text-xl font-black">
+                    加入比賽
                 </button>
             </div>
-            <p id="error-msg" class="text-red-400 text-xs font-bold text-center"></p>
         </div>
     </div>
 
-    <!-- 等待室 (Waiting) -->
-    <div id="waiting-view" class="hidden w-full max-w-md glass-panel rounded-[2.5rem] p-10 space-y-8 text-center relative z-10">
-        <div class="space-y-2">
-            <p class="text-xs font-black text-slate-500 uppercase tracking-[0.3em]">房間邀請碼</p>
-            <h2 id="display-room-code" class="text-6xl font-black text-white bg-clip-text text-transparent bg-gradient-to-b from-white to-indigo-400">------</h2>
+    <!-- Waiting View -->
+    <div id="waiting-view" class="hidden w-full max-w-md cartoon-panel p-10 space-y-8 text-center relative z-10">
+        <button onclick="leaveRoom()" class="absolute -top-4 -right-4 cartoon-btn bg-red-400 w-12 h-12 flex items-center justify-center">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="space-y-1">
+            <p class="text-sm font-black text-slate-500">房間代碼</p>
+            <h2 id="display-room-code" class="text-5xl font-black text-indigo-600 tracking-widest">------</h2>
+            <p id="display-q-count" class="text-xs font-black bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full inline-block mt-2">題數：正在載入...</p>
         </div>
         
-        <div class="bg-black/20 rounded-[2rem] p-6 border border-white/5">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xs font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
-                    <i class="fas fa-user-friends"></i> 參賽者名單
-                </h3>
-                <span id="player-count" class="bg-indigo-500 text-[10px] px-2 py-0.5 rounded-full font-black text-white">0</span>
-            </div>
-            <div id="player-list" class="space-y-2 max-h-48 overflow-y-auto pr-2">
-                <!-- 玩家列表 -->
-            </div>
+        <div class="bg-indigo-50 rounded-3xl p-6 border-4 border-indigo-100">
+            <h3 class="text-sm font-black text-indigo-400 uppercase tracking-widest mb-4">
+                已準備就緒的玩家 (<span id="player-count">0</span>)
+            </h3>
+            <div id="player-list" class="space-y-3"></div>
         </div>
 
-        <div id="host-controls" class="hidden space-y-4">
-            <button id="btn-start" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black py-5 rounded-2xl shadow-2xl shadow-indigo-500/40 animate-bounce mt-4">
-                開始大賽
+        <div id="host-controls" class="hidden">
+            <button id="btn-start" class="w-full cartoon-btn bg-yellow-400 text-slate-800 py-5 text-2xl font-black animate-bounce">
+                派對開始！
             </button>
-            <p class="text-slate-500 text-[10px] font-bold">只有房主可以開始遊戲</p>
         </div>
-        <div id="guest-waiting" class="py-4">
-            <div class="flex items-center justify-center gap-2 text-indigo-400 font-black animate-pulse text-lg italic">
-                <i class="fas fa-spinner fa-spin"></i> 等待比賽開始...
-            </div>
+        <div id="guest-waiting" class="py-4 font-black text-indigo-400 text-xl animate-pulse">
+            等待村長開球...
         </div>
     </div>
 
-    <!-- 遊戲進行中 (Game) -->
+    <!-- Game View -->
     <div id="game-view" class="hidden w-full max-w-5xl space-y-6 px-4 relative z-10">
-        <!-- 排行榜進度條 -->
-        <div class="glass-panel rounded-3xl p-6 border border-white/10 sticky top-4 z-50">
-            <div id="leaderboard" class="space-y-4">
-                <!-- 即時同步進度條 -->
-            </div>
+        <div class="cartoon-panel p-6 mb-8">
+            <div id="leaderboard" class="space-y-4"></div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- 題目區 -->
-            <div class="lg:col-span-2 glass-panel rounded-[2.5rem] p-8 md:p-12 space-y-8 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
-                
-                <div class="flex justify-between items-end">
-                    <div class="space-y-1">
-                        <span id="question-number" class="text-indigo-400 text-xs font-black uppercase tracking-widest">Question 1 / 4</span>
-                        <h2 id="question-text" class="text-2xl md:text-3xl font-black text-white leading-tight">
-                            題目載入中...
-                        </h2>
-                    </div>
-                    <div class="text-right hidden md:block">
-                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">My Score</p>
-                        <p id="my-score-display" class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-orange-400 to-red-600">0</p>
+            <div id="question-box" class="lg:col-span-2 cartoon-panel p-8 md:p-12 space-y-8 relative overflow-hidden">
+                <div class="flex justify-between items-center">
+                    <span id="question-number" class="bg-indigo-600 text-white px-4 py-1 rounded-full font-black text-sm shadow-[4px_4px_0px_#1e293b]">Q1 / 10</span>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-hourglass-start text-indigo-600"></i>
+                        <span id="timer-text" class="text-3xl font-black text-indigo-600 font-mono">30</span>
                     </div>
                 </div>
-
-                <div id="options-container" class="grid grid-cols-1 gap-4">
-                    <!-- 選項按鈕 -->
+                <h2 id="question-text" class="text-xl md:text-2xl font-black text-slate-800 leading-tight">題目載入中...</h2>
+                <div id="options-container" class="grid grid-cols-1 gap-4"></div>
+                <div id="wait-message" class="hidden text-center py-8 bg-indigo-50 rounded-2xl border-4 border-dashed border-indigo-200">
+                    <p class="text-indigo-400 font-black text-xl animate-bounce">等待其他小夥伴答題中...</p>
                 </div>
             </div>
 
-            <!-- 側邊狀態攔 (Mobile 優化) -->
-            <div class="glass-panel rounded-[2.5rem] p-8 flex flex-col justify-between items-center text-center">
-                <div class="space-y-4 w-full">
-                    <p class="text-xs font-black text-slate-500 uppercase tracking-widest">目前排名</p>
-                    <div id="my-rank-display" class="text-6xl font-black text-white">#1</div>
+            <div id="mid-rank-box" class="hidden lg:col-span-2 cartoon-panel p-8 md:p-12 space-y-6 text-center">
+                <h3 class="text-3xl font-black text-indigo-600 text-stroke text-white italic">排名即時快報</h3>
+                <div id="mid-rank-list" class="space-y-4"></div>
+                <p class="text-slate-400 font-black animate-pulse">下一題即將撞擊！</p>
+            </div>
+
+            <div class="cartoon-panel p-8 flex flex-col justify-between items-center text-center">
+                <div class="space-y-2">
+                    <p class="text-sm font-black text-slate-400">目前排名</p>
+                    <div id="my-rank-display" class="text-7xl font-black text-indigo-600 text-stroke text-white">#1</div>
                 </div>
-                
-                <!-- 裝飾用圓圈 -->
-                <div class="relative w-32 h-32 flex items-center justify-center my-6">
-                    <svg class="w-full h-full transform -rotate-90">
-                        <circle cx="64" cy="64" r="50" stroke="currentColor" stroke-width="8" fill="transparent" class="text-white/5" />
-                        <circle id="timer-circle" cx="64" cy="64" r="50" stroke="currentColor" stroke-width="8" fill="transparent" stroke-dasharray="314" stroke-dashoffset="0" class="text-indigo-500 transition-all duration-1000" />
+                <div class="relative w-32 h-32 my-6">
+                    <svg class="w-full h-full -rotate-90">
+                        <circle cx="64" cy="64" r="50" stroke="#f1f5f9" stroke-width="12" fill="none" />
+                        <circle id="timer-circle" cx="64" cy="64" r="50" stroke="#6366f1" stroke-width="12" fill="none" stroke-dasharray="314" stroke-dashoffset="0" stroke-linecap="round" class="transition-all" />
                     </svg>
                     <div class="absolute inset-0 flex items-center justify-center">
-                        <i class="fas fa-clock text-slate-500"></i>
+                        <i class="fas fa-trophy text-yellow-400 text-3xl"></i>
                     </div>
                 </div>
-
-                <div class="md:hidden pt-4 border-t border-white/5 w-full">
-                    <p class="text-xs font-black text-slate-500">我的分數: <span id="my-score-mobile" class="text-orange-500">0</span></p>
+                <div class="w-full space-y-4">
+                    <div>
+                        <p class="text-sm font-black text-slate-400">得分</p>
+                        <p id="my-score-display" class="text-4xl font-black text-orange-500">0</p>
+                    </div>
+                    <button onclick="leaveRoom()" class="cartoon-btn bg-red-100 text-red-500 border-red-200 shadow-none px-4 py-2 text-xs font-black uppercase">退出賽事</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 結算畫面 (Results) -->
-    <div id="results-view" class="hidden w-full max-w-md glass-panel rounded-[3rem] p-10 text-center space-y-8 relative z-10 overflow-hidden">
-        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500"></div>
-        <div class="space-y-2">
-            <h2 class="text-5xl font-black text-white">大賽完結</h2>
-            <p class="text-slate-500 font-bold">Final Rankings</p>
+    <!-- Results View -->
+    <div id="results-view" class="hidden w-full max-w-md cartoon-panel p-10 text-center space-y-8 relative z-10 overflow-hidden">
+        <div class="bg-yellow-400 border-b-4 border-slate-800 p-6 -mx-10 -mt-10 mb-6">
+            <h2 class="text-5xl font-black text-slate-800 text-stroke text-white italic">頒獎典禮</h2>
         </div>
-        
-        <div id="final-rankings" class="space-y-4">
-            <!-- 最終排名 -->
-        </div>
-        
-        <button onclick="location.reload()" class="w-full bg-white text-black font-black py-5 rounded-2xl shadow-xl transition-all hover:bg-slate-200 active:scale-95">
-            重新挑戰
-        </button>
+        <div id="final-rankings" class="space-y-4"></div>
+        <button onclick="location.reload()" class="w-full cartoon-btn bg-indigo-600 py-5 text-2xl font-black">回大廳</button>
     </div>
 
-    <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getDatabase, ref, set, update, onValue, get, onDisconnect } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
-        // Firebase 配置
         const firebaseConfig = {
             apiKey: "AIzaSyDbkBSl5Hav7EKN8rZ2FSxyrkYcMNvjOjk",
             authDomain: "myf-game1.firebaseapp.com",
@@ -248,62 +255,99 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
-        const APP_ID = "bafs-racing-html-v2";
+        const APP_ID = "bafs-cartoon-sync-v1";
 
-        // 題庫 (隨機打亂用)
+        // 全新題庫：合併兩部分共 35 題
         const BAFS_QUESTIONS = [
-            { question: "在會計方程中，資產 (Assets) 等於：", options: ["負債 + 所有者權益", "負債 - 所有者權益", "收入 - 開支", "現金 + 存貨"], answer: 0 },
-            { question: "下列哪一項是有限公司與無限公司最大的區別？", options: ["股東人數", "債務承擔責任（有限 vs 無限）", "營業額多寡", "納稅率"], answer: 1 },
-            { question: "計算流動比率 (Current Ratio) 的公式是：", options: ["流動資產 / 流動負債", "總資產 / 總負債", "純利 / 營業額", "存貨 / 銷貨成本"], answer: 0 },
-            { question: "下列哪項不是市場行銷 (Marketing) 的 4P 之一？", options: ["產品 (Product)", "價格 (Price)", "利潤 (Profit)", "促銷 (Promotion)"], answer: 2 },
-            { question: "下列哪一項是人力資源管理的主要職能？", options: ["生產計劃", "員工培訓與發展", "資產管理", "產品定價"], answer: 1 },
-            { question: "計算純利 (Net Profit) 的方法是：", options: ["毛利 - 營運開支", "銷貨收入 - 銷貨成本", "資產 - 負債", "收入 + 投資"], answer: 0 }
+            // 第一部分：管理功能
+            { "q": "下列哪項是「管理」的正確定義？", "a": ["訂立組織目標，並制定最佳方案來達成這些目標的過程", "透過計劃、組織、領導和控制四項功能以達成組織目標的過程", "決定須要做哪些工作，以及如何把這些工作組合起來的過程", "引導、指示和激勵員工達成組織目標的過程"], "correct": 1, "exp": "1.B" },
+            { "q": "計劃對企業十分重要，因為它可以： (1) 幫助管理人員尋找機會和應對挑戰 (2) 為員工提供指引 (3) 作為監控工作進度的標準", "a": ["只有 (1) 和 (2)", "只有 (1) 和 (3)", "只有 (2) 和 (3)", "(1)、(2) 和 (3)"], "correct": 3, "exp": "2. D" },
+            { "q": "在良好目標的「SMART」規則中，「可量度」是指：", "a": ["目標必須清楚明確說明要達到的結果", "目標應可量化或以數字形式表達，以量度企業的實際表現", "目標應該既富挑戰性，又可憑着額外的努力達成", "目標應針對影響企業業績的關鍵因素"], "correct": 1, "exp": "3. B" },
+            { "q": "下列哪項是「前線管理人員」的工作例子？", "a": ["制定公司的願景和使命", "制定公司政策和策略", "處理顧客投訴", "訂立公司的整體目標 and 方向"], "correct": 2, "exp": "4. C" },
+            { "q": "關於「幕僚職權」，下列哪項描述是正確的？", "a": ["讓他可以向直屬下級（下屬）發出工作指令", "衍生出從屬關係", "擁有此職權的管理人員可以指導和監督下屬", "企業授予一些特定工作職位的權力，這些職位為其他部門提供支援、協助和意見"], "correct": 3, "exp": "5. D" },
+            { "q": "哪種領導風格的管理人員不讓下屬參與決策，並自行作出所有決策？", "a": ["獨裁式領導", "參與式領導", "自由放任式領導", "民主式領導"], "correct": 0, "exp": "6.A" },
+            { "q": "採用「參與式領導」的其中一項壞處是：", "a": ["員工失去工作動力", "降低營運效率", "為工作間帶來混難", "視野狹窄"], "correct": 1, "exp": "7. B" },
+            { "q": "「控制」過程的第一步是：", "a": ["量度實際表現", "比較實際表現與標準", "訂立表現標準", "分析差異並採取糾正行動"], "correct": 2, "exp": "8. C" },
+            { "q": "下列哪項是有效管理原則中「分工」的優點？", "a": ["減低工作滿足感", "牽一髮而動全身", "靈活度低", "提升效率"], "correct": 3, "exp": "9. D" },
+            { "q": "「統一命令」原則是指：", "a": ["企業內每個計劃都只由一名管理人員統領", "所有擁有相同目標的活動都應納入同一項計劃內", "每名員工只聽從一名上司的指揮，並只向他一人匯報", "把組織的整體目標轉化成個別單位、部門和員工的工作目標"], "correct": 2, "exp": "10. C" },
+            { "q": "根據「職權相稱原則」：", "a": ["職權和責任是相輔相成的，而且兩者必須平衡", "管理人員可以授權下屬完成某項工作，但無須負責", "責任是組織賦予在位者的正式和合法權力", "職權是員工完成獲委派職務的義務"], "correct": 0, "exp": "11. A" },
+            { "q": "「目標管理」是指：", "a": ["上司委派工作給下屬，並把正式的職權和責任轉移到下屬身上", "把組織的整體目標轉化成個別單位、部門和員工的工作目標", "對各項活動進行監控，以確保活動按計劃完成", "決定須要做哪些工作，以及如何把這些工作組合起來"], "correct": 1, "exp": "12. B" },
+            { "q": "管理的重要性包括： (1) 幫助企業有效地達成組織目標 (2) 確保企業有效地使用資源", "a": ["只有 (1)", "只有 (2)", "(1) 和 (2)", "以上皆不是"], "correct": 2, "exp": "13. C" },
+            { "q": "採用「自由放任式領導」的好處包括：", "a": ["決策迅速", "拓寬管理人員的視野", "加強員工對公司政策的支持", "鼓勵創新"], "correct": 3, "exp": "14. D" },
+            { "q": "採用「統一的方向」的好處是：", "a": ["節省培訓員工的時間", "避免部門之間發生衝突", "減少工作延誤", "促進自動化"], "correct": 1, "exp": "15. B" },
+            // 第二部分：商業功能
+            { "q": "人力資源管理的定義包括以下哪項？", "a": ["只負責招聘員工", "獲取和培訓僱員、評核表現、提供報酬，以及處理僱員關係和福祉", "只負責計算薪金", "只負責處理投訴"], "correct": 1, "exp": "人力資源管理是獲取和培訓僱員、評核他們的表現、為他們提供報酬，以及處理僱員關係和僱員福祉等事項的過程。" },
+            { "q": "以下哪項是人力資源管理的角色？", "a": ["進行財務分析", "人力規劃", "設計生產程序", "進行市場研究"], "correct": 1, "exp": "人力規劃是人力資源管理的六個角色之一，包括預測所需員工數量和類型。" },
+            { "q": "財務管理的目標是甚麼？", "a": ["為顧客創造最大價值", "為東主賺取最大的財富", "為員工提供最佳福利", "為社會作出最大貢獻"], "correct": 1, "exp": "財務管理的目標是為東主賺取最大的財富。" },
+            { "q": "以下哪項屬於財務管理中的「營運資金決策」？", "a": ["選擇融資方式", "管理現金、應收帳款、應付帳款和存貨", "選取投資項目", "利用會計比率評估業績"], "correct": 1, "exp": "營運資金決策包括管理企業的流動資產和流動負債，如現金、應收帳款、應付帳款和存貨。" },
+            { "q": "營運管理的定義是甚麼？", "a": ["管理企業的財務資源", "管理營運系統以及管理將投入轉化為產出的過程", "管理企業的人力資源", "管理企業的市場營銷活動"], "correct": 1, "exp": "營運管理是指管理營運系統以及管理將投入轉化為產出的過程。" },
+            { "q": "以下哪項屬於營運管理的角色？", "a": ["進行市場研究", "制定報酬制度", "品質保證", "管理顧客關係"], "correct": 2, "exp": "品質保證是營運管理的四個角色之一，確保企業的貨品和服務都是優質的。" },
+            { "q": "市場營銷管理的定義強調：", "a": ["只專注於產品定價", "確認顧客的需要並執行市場營銷策略，比競爭對手更能滿足這些需要", "只負責廣告宣傳", "只管理分銷渠道"], "correct": 1, "exp": "市場營銷管理是指確認顧客的需要並執行市場營銷策略，讓企業提供的貨品和服務比競爭對手更能滿足這些需要，從而賺取利潤的過程。" },
+            { "q": "以下哪項是市場營銷管理的角色？", "a": ["存貨管理", "進行財務分析", "劃分市場、選定目標市場並決定市場定位", "設計生產程序"], "correct": 2, "exp": "劃分市場、選定目標市場並決定市場定位是市場營銷管理的五個角色之一。" },
+            { "q": "資訊管理的定義是：", "a": ["只負責建立網站", "透過收集、處理、儲存和傳遞資訊，以支援企業運作和決策的過程", "只負責保養電腦硬件", "只負責數據備份"], "correct": 1, "exp": "資訊管理就是透過收集、處理、儲存和傳遞資訊，以支援企業運作和決策的過程。" },
+            { "q": "以下哪項是資訊管理的角色？", "a": ["建立和維護資訊系統，以支援其他部門", "招聘員工", "制定市場營銷策略", "管理存貨"], "correct": 0, "exp": "建立和維護資訊系統，讓其他部門可從系統獲取可靠和適時的資訊，是資訊管理的角色之一。" },
+            { "q": "風險管理的定義是：", "a": ["只購買保險", "識別和評估企業的各種潛在風險，並制定措施，務求盡量減少損失的過程", "只避免所有風險", "只承擔所有風險"], "correct": 1, "exp": "風險管理是指識別和評估企業的各種潛在風險，並制定措施，務求盡量減少損失的過程。" },
+            { "q": "以下哪項屬於風險管理的策略？", "a": ["風險迴避", "品質保證", "市場研究", "員工培訓"], "correct": 0, "exp": "風險管理策略包括風險迴避、風險承擔、風險減少和風險轉移。" },
+            { "q": "根據筆記，商業功能之間的關係是：", "a": ["互相獨立，沒有關聯", "互相支援和互相合作", "只有競爭關係", "只有從屬關係"], "correct": 1, "exp": "這些主要的商業功能是互相關聯的，它們須在企業的日常營運中互相支援和合作。" },
+            { "q": "人力資源管理中「員工考績」的作用是：", "a": ["招聘員工", "設計一套設有表現標準的員工考績制度，以評核員工的表現", "計算薪金", "處理員工投訴"], "correct": 1, "exp": "員工考績：設計一套設有表現標準的員工考績制度，以評核員工的表現。" },
+            { "q": "財務管理中「進行財務分析」是利用甚麼來評估企業業績？", "a": ["市場調查報告", "會計比率", "員工滿意度調查", "顧客意見卡"], "correct": 1, "exp": "進行財務分析：利用會計比率來評估企業各方面的業績，包括盈利能力、變現能力、償債能力和管理效能。" },
+            { "q": "營運管理中「設計有效的生產程序」包括：", "a": ["只設計產品外觀", "計劃生產能力、選擇生產地點、設計生產流程、設計工作，以及設計生產場地的佈局", "只選擇供應商", "只管理庫存"], "correct": 1, "exp": "設計有效的生產程序包括計劃生產能力、選擇生產地點、設計生產流程、設計工作，以及設計生產場地的佈局。" },
+            { "q": "市場營銷管理中「制定市場營銷策略」包括：", "a": ["只制定價格", "產品策略、定價策略、分銷策略和推廣策略", "只制定推廣計劃", "只選擇分銷渠道"], "correct": 1, "exp": "制定市場營銷策略包括產品策略、定價策略、分銷策略和推廣策略。" },
+            { "q": "資訊管理的重要性包括：", "a": ["只支援決策", "支援各個部門作出決策；支援企業的日常運作；促進員工之間的溝通和合作", "只促進溝通", "只支援日常運作"], "correct": 1, "exp": "資訊管理的重要性：支援各個部門作出決策；支援企業的日常運作；促進員工之間的溝通和合作。" },
+            { "q": "風險管理中「控制風險」包括制定哪些策略？", "a": ["只購買保險", "風險迴避、風險承擔、風險減少和風險轉移", "只避免風險", "只承擔風險"], "correct": 1, "exp": "控制風險：為企業制定風險管理策略，包括風險迴避、風險承擔、風險減少和風險轉移。" },
+            { "q": "以下哪項是商業功能「互相支援」的例子？", "a": ["市場營銷部門自行招聘員工", "人力資源管理按其他部門的要求為其招聘員工", "財務部門自行設計生產程序", "營運部門自行制定報酬制度"], "correct": 1, "exp": "互相支援的例子：人力資源管理按其他部門的要求為其招聘員工；財務管理籌集和分配資金，以維持其他部門的營運。" }
         ];
 
         let currentUser = null;
         let currentRoomCode = "";
-        let currentQuestionIdx = 0;
-        let myScore = 0;
         let isHost = false;
+        let myScore = 0;
+        let timerInterval = null;
+        let totalQuestionsLimit = 10;
+        const QUESTION_TIME = 30;
 
         function showView(viewId) {
             document.querySelectorAll('body > div[id$="-view"], #loading-screen').forEach(div => div.classList.add('hidden'));
             document.getElementById(viewId).classList.remove('hidden');
         }
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                showView('lobby-view');
-                initGlobalOnlineListener();
-            } else {
-                signInAnonymously(auth);
+        window.leaveRoom = async () => {
+            if (currentRoomCode && currentUser) {
+                await set(ref(db, `artifacts/${APP_ID}/public/data/rooms/${currentRoomCode}/players/${currentUser.uid}`), null);
             }
+            location.reload();
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) { currentUser = user; showView('lobby-view'); initGlobalOnlineListener(); }
+            else { signInAnonymously(auth); }
         });
 
         function initGlobalOnlineListener() {
-            onValue(ref(db, `artifacts/${APP_ID}/public/data/rooms`), (snapshot) => {
-                const rooms = snapshot.val();
-                let totalOnline = 0;
-                if (rooms) Object.values(rooms).forEach(r => { if(r.players) totalOnline += Object.keys(r.players).length });
-                document.getElementById('global-online-count').innerText = totalOnline;
+            onValue(ref(db, `artifacts/${APP_ID}/public/data/rooms`), (s) => {
+                const rooms = s.val();
+                let count = 0;
+                if (rooms) Object.values(rooms).forEach(r => { if(r.players) count += Object.keys(r.players).length });
+                document.getElementById('global-online-count').innerText = count;
             });
         }
 
-        // 核心邏輯
         document.getElementById('btn-create').onclick = async () => {
             const name = document.getElementById('player-name').value.trim();
-            if (!name) return alert("請輸入名稱");
+            const qCount = parseInt(document.getElementById('question-count-input').value) || 10;
+            if (!name) return alert("請輸入暱稱");
+            
+            const limit = Math.max(1, Math.min(qCount, BAFS_QUESTIONS.length));
             const code = Math.random().toString(36).substring(2, 8).toUpperCase();
             currentRoomCode = code;
             isHost = true;
+            totalQuestionsLimit = limit;
 
-            const roomPath = `artifacts/${APP_ID}/public/data/rooms/${code}`;
-            onDisconnect(ref(db, `${roomPath}/players/${currentUser.uid}`)).remove();
-
-            await set(ref(db, roomPath), {
-                code, hostId: currentUser.uid, status: 'waiting',
-                players: { [currentUser.uid]: { uid: currentUser.uid, name, score: 0, progress: 0 } }
+            onDisconnect(ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}/players/${currentUser.uid}`)).remove();
+            await set(ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}`), {
+                code, hostId: currentUser.uid, status: 'waiting', currentQuestion: 0, syncStatus: 'asking',
+                questionLimit: limit,
+                players: { [currentUser.uid]: { uid: currentUser.uid, name, score: 0, progress: 0, answered: false } }
             });
             initRoomListener(code);
             showView('waiting-view');
@@ -315,15 +359,13 @@
         document.getElementById('btn-join').onclick = async () => {
             const name = document.getElementById('player-name').value.trim();
             const code = document.getElementById('join-code').value.trim().toUpperCase();
-            if (!name || !code) return alert("請輸入名稱與代碼");
-
-            const roomRef = ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}`);
-            const snapshot = await get(roomRef);
+            if (!name || !code) return alert("請輸入資訊");
+            const snapshot = await get(ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}`));
             if (snapshot.exists()) {
-                if (snapshot.val().status !== 'waiting') return alert("遊戲已在進行中");
+                if (snapshot.val().status !== 'waiting') return alert("比賽已開始");
                 onDisconnect(ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}/players/${currentUser.uid}`)).remove();
                 await update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}/players`), {
-                    [currentUser.uid]: { uid: currentUser.uid, name, score: 0, progress: 0 }
+                    [currentUser.uid]: { uid: currentUser.uid, name, score: 0, progress: 0, answered: false }
                 });
                 currentRoomCode = code;
                 initRoomListener(code);
@@ -333,116 +375,147 @@
         };
 
         function initRoomListener(code) {
-            onValue(ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}`), (snapshot) => {
-                const data = snapshot.val();
-                if (!data) return;
-
+            onValue(ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}`), (s) => {
+                const data = s.val();
+                if (!data) return location.reload();
+                totalQuestionsLimit = data.questionLimit || 10;
+                document.getElementById('display-q-count').innerText = `題數：${totalQuestionsLimit} 題`;
                 const playersArr = Object.values(data.players || {});
                 document.getElementById('player-count').innerText = playersArr.length;
                 document.getElementById('player-list').innerHTML = playersArr.map(p => `
-                    <div class="flex items-center justify-between bg-white/5 p-4 rounded-2xl border border-white/5">
-                        <span class="font-bold text-white">${p.name} ${p.uid === currentUser.uid ? '(我)' : ''}</span>
-                        ${p.uid === data.hostId ? '<i class="fas fa-crown text-yellow-500"></i>' : ''}
+                    <div class="flex items-center justify-between bg-white border-2 border-slate-800 p-4 rounded-2xl shadow-[4px_4px_0px_#1e293b]">
+                        <span class="font-black text-slate-800">${p.name} ${p.uid === currentUser.uid ? '(你)' : ''}</span>
                     </div>
                 `).join('');
-
-                if (data.status === 'playing' && document.getElementById('game-view').classList.contains('hidden')) {
+                if (data.status === 'playing') {
                     showView('game-view');
-                    renderQuestion();
+                    updateLeaderboard(playersArr);
+                    handleSyncLogic(data, playersArr);
+                } else if (data.status === 'finished') {
+                    showResults(playersArr);
                 }
-
-                if (data.status === 'playing') updateLeaderboard(playersArr);
             });
+        }
+
+        async function handleSyncLogic(roomData, players) {
+            const qIdx = roomData.currentQuestion;
+            const sync = roomData.syncStatus;
+            if (sync === 'asking') {
+                document.getElementById('question-box').classList.remove('hidden');
+                document.getElementById('mid-rank-box').classList.add('hidden');
+                renderQuestion(qIdx, players.find(p => p.uid === currentUser.uid).answered);
+                startTimer(QUESTION_TIME);
+                if (isHost && players.every(p => p.answered)) goToRanking();
+            } else if (sync === 'ranking') {
+                document.getElementById('question-box').classList.add('hidden');
+                document.getElementById('mid-rank-box').classList.remove('hidden');
+                showMidRank(players);
+                clearInterval(timerInterval);
+                if (isHost) {
+                    setTimeout(() => {
+                        const nextQ = qIdx + 1;
+                        if (nextQ < totalQuestionsLimit) updateRoomStatus(nextQ, 'asking');
+                        else update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${currentRoomCode}`), { status: 'finished' });
+                    }, 5000);
+                }
+            }
+        }
+
+        async function updateRoomStatus(qIdx, sync) {
+            const roomRef = ref(db, `artifacts/${APP_ID}/public/data/rooms/${currentRoomCode}`);
+            const pSnap = await get(ref(db, `artifacts/${APP_ID}/public/data/rooms/${currentRoomCode}/players`));
+            const pData = pSnap.val();
+            Object.keys(pData).forEach(uid => pData[uid].answered = false);
+            await update(roomRef, { currentQuestion: qIdx, syncStatus: sync, players: pData });
+        }
+
+        async function goToRanking() {
+            if (!isHost) return;
+            await update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${currentRoomCode}`), { syncStatus: 'ranking' });
         }
 
         document.getElementById('btn-start').onclick = () => {
             update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${currentRoomCode}`), { status: 'playing' });
         };
 
-        function renderQuestion() {
-            const q = BAFS_QUESTIONS[currentQuestionIdx];
-            document.getElementById('question-number').innerText = `Question ${currentQuestionIdx + 1} / ${BAFS_QUESTIONS.length}`;
-            document.getElementById('question-text').innerText = q.question;
+        function startTimer(seconds) {
+            clearInterval(timerInterval);
+            let left = seconds;
+            const circle = document.getElementById('timer-circle');
+            const text = document.getElementById('timer-text');
+            const updateUI = () => {
+                text.innerText = left;
+                circle.style.strokeDashoffset = 314 - (314 * (left / QUESTION_TIME));
+            };
+            updateUI();
+            timerInterval = setInterval(() => {
+                left--; updateUI();
+                if (left <= 0) { clearInterval(timerInterval); if (isHost) goToRanking(); }
+            }, 1000);
+        }
+
+        function renderQuestion(qIdx, alreadyAnswered) {
+            const q = BAFS_QUESTIONS[qIdx];
+            document.getElementById('question-number').innerText = `Q${qIdx + 1} / ${totalQuestionsLimit}`;
+            document.getElementById('question-text').innerText = q.q;
             const container = document.getElementById('options-container');
+            const waitMsg = document.getElementById('wait-message');
             container.innerHTML = '';
-            
-            q.options.forEach((opt, i) => {
+            if (alreadyAnswered) { container.classList.add('hidden'); waitMsg.classList.remove('hidden'); return; }
+            container.classList.remove('hidden'); waitMsg.classList.add('hidden');
+            q.a.forEach((opt, i) => {
                 const btn = document.createElement('button');
-                btn.className = "option-btn group flex items-center p-6 bg-white/5 border-2 border-white/5 hover:border-indigo-500 hover:bg-indigo-500/10 rounded-[1.5rem] text-left text-white font-bold";
-                btn.innerHTML = `<span class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center mr-4 group-hover:bg-indigo-500 transition-colors">${String.fromCharCode(65+i)}</span><span>${opt}</span>`;
-                btn.onclick = (e) => handleAnswer(i, e.currentTarget);
+                btn.className = "cartoon-btn bg-white text-slate-800 p-4 font-black text-left flex items-center hover:bg-indigo-50 leading-snug";
+                btn.innerHTML = `<span class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-100 border-2 border-slate-800 flex items-center justify-center mr-3 text-sm">${String.fromCharCode(65+i)}</span><span class="text-sm md:text-base">${opt}</span>`;
+                btn.onclick = () => handleAnswer(qIdx, i);
                 container.appendChild(btn);
             });
         }
 
-        async function handleAnswer(idx, btnEl) {
-            const correct = idx === BAFS_QUESTIONS[currentQuestionIdx].answer;
-            const allBtns = document.querySelectorAll('.option-btn');
-            allBtns.forEach(b => b.style.pointerEvents = 'none');
-
-            if (correct) {
-                myScore += 10;
-                btnEl.classList.add('border-emerald-500', 'bg-emerald-500/20');
-                showFloatingText(btnEl, "+10", "text-emerald-400");
-            } else {
-                btnEl.classList.add('border-red-500', 'bg-red-500/20', 'animate-shake');
-                showFloatingText(btnEl, "Oops!", "text-red-400");
-            }
-
+        async function handleAnswer(qIdx, idx) {
+            const correct = idx === BAFS_QUESTIONS[qIdx].correct;
+            if (correct) myScore += 10;
             document.getElementById('my-score-display').innerText = myScore;
-            document.getElementById('my-score-mobile').innerText = myScore;
-
-            setTimeout(async () => {
-                currentQuestionIdx++;
-                const progress = currentQuestionIdx / BAFS_QUESTIONS.length;
-                await update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${currentRoomCode}/players/${currentUser.uid}`), {
-                    score: myScore, progress: progress
-                });
-
-                if (currentQuestionIdx < BAFS_QUESTIONS.length) renderQuestion();
-                else showResults();
-            }, 800);
-        }
-
-        function showFloatingText(parent, text, colorClass) {
-            const el = document.createElement('div');
-            el.className = `fixed font-black text-2xl floating-score ${colorClass}`;
-            el.innerText = text;
-            const rect = parent.getBoundingClientRect();
-            el.style.left = `${rect.left + rect.width/2}px`;
-            el.style.top = `${rect.top}px`;
-            document.body.appendChild(el);
-            setTimeout(() => el.remove(), 1000);
+            await update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${currentRoomCode}/players/${currentUser.uid}`), {
+                score: myScore, progress: (qIdx + 1) / totalQuestionsLimit, answered: true
+            });
         }
 
         function updateLeaderboard(players) {
             const sorted = [...players].sort((a, b) => b.score - a.score);
-            const myRank = sorted.findIndex(p => p.uid === currentUser.uid) + 1;
-            document.getElementById('my-rank-display').innerText = `#${myRank}`;
-            
-            const container = document.getElementById('leaderboard');
-            container.innerHTML = sorted.map((p, i) => `
-                <div class="flex items-center gap-4 group">
-                    <div class="w-16 text-[10px] font-black text-slate-500 truncate uppercase tracking-tighter">${p.name}</div>
-                    <div class="flex-grow bg-white/5 h-2 rounded-full overflow-hidden border border-white/5">
-                        <div class="h-full bg-gradient-to-r from-indigo-600 to-purple-500 progress-glow progress-transition" style="width: ${(p.progress || 0) * 100}%"></div>
+            document.getElementById('my-rank-display').innerText = `#${sorted.findIndex(p => p.uid === currentUser.uid) + 1}`;
+            document.getElementById('leaderboard').innerHTML = sorted.map(p => `
+                <div class="flex items-center gap-3">
+                    <span class="w-16 text-xs font-black truncate">${p.name}</span>
+                    <div class="flex-grow progress-bar-container h-3">
+                        <div class="h-full progress-fill" style="width: ${(p.progress || 0) * 100}%"></div>
                     </div>
-                    <div class="w-10 text-right font-black text-xs text-indigo-400">${p.score}</div>
+                    <span class="w-10 text-right font-black text-xs">${p.score}</span>
                 </div>
             `).join('');
         }
 
-        async function showResults() {
-            showView('results-view');
-            const snapshot = await get(ref(db, `artifacts/${APP_ID}/public/data/rooms/${currentRoomCode}/players`));
-            const players = Object.values(snapshot.val() || {}).sort((a, b) => b.score - a.score);
-            document.getElementById('final-rankings').innerHTML = players.map((p, i) => `
-                <div class="flex items-center justify-between p-5 rounded-[1.5rem] ${p.uid === currentUser.uid ? 'bg-indigo-500 text-white shadow-xl shadow-indigo-500/20' : 'bg-white/5 text-slate-300'}">
+        function showMidRank(players) {
+            const sorted = [...players].sort((a, b) => b.score - a.score);
+            document.getElementById('mid-rank-list').innerHTML = sorted.slice(0, 5).map((p, i) => `
+                <div class="flex items-center justify-between p-4 bg-white border-2 border-slate-800 rounded-2xl shadow-[4px_4px_0px_#1e293b]">
                     <div class="flex items-center gap-4">
-                        <span class="text-xl font-black">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i+1}</span>
-                        <span class="font-bold">${p.name}</span>
+                        <span class="w-8 h-8 flex items-center justify-center bg-indigo-600 text-white rounded-full font-black">#${i+1}</span>
+                        <span class="font-black text-slate-800 text-lg">${p.name}</span>
                     </div>
-                    <span class="font-black">${p.score} pt</span>
+                    <span class="font-black text-orange-500 text-xl">${p.score} PT</span>
+                </div>
+            `).join('');
+        }
+
+        function showResults(players) {
+            showView('results-view');
+            const sorted = [...players].sort((a, b) => b.score - a.score);
+            document.getElementById('final-rankings').innerHTML = sorted.map((p, i) => `
+                <div class="flex items-center justify-between p-5 rounded-2xl border-4 border-slate-800 ${p.uid === currentUser.uid ? 'bg-indigo-500 text-white' : 'bg-white text-slate-800 shadow-[4px_4px_0px_#1e293b]'}">
+                    <span class="text-2xl font-black italic">#${i+1}</span>
+                    <span class="font-black text-lg">${p.name}</span>
+                    <span class="font-black text-lg">${p.score}分</span>
                 </div>
             `).join('');
         }
