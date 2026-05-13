@@ -3,131 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BAFS 商業大賽 - 穩定版</title>
+    <title>BAFS 商業大賽 - 終極對戰版</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); min-height: 100vh; color: #1e293b; }
-        .cartoon-panel { background: white; border: 4px solid #1e293b; border-radius: 2rem; box-shadow: 8px 8px 0px #1e293b; }
-        .cartoon-btn { background: #6366f1; color: white; border: 3px solid #1e293b; border-radius: 1.25rem; box-shadow: 4px 4px 0px #1e293b; transition: all 0.1s; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        body { font-family: 'Noto Sans TC', sans-serif; background: #0f172a; min-height: 100vh; color: #f8fafc; overflow-x: hidden; }
+        .cartoon-panel { background: white; border: 4px solid #1e293b; border-radius: 2rem; box-shadow: 8px 8px 0px #1e293b; color: #1e293b; }
+        .cartoon-btn { background: #6366f1; color: white; border: 3px solid #1e293b; border-radius: 1.25rem; box-shadow: 4px 4px 0px #1e293b; transition: all 0.1s; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .cartoon-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #1e293b; }
-        .cartoon-btn:disabled { background: #94a3b8; cursor: not-allowed; box-shadow: none; transform: none; }
-        .hidden { display: none !important; }
-        .text-stroke { -webkit-text-stroke: 1.5px #1e293b; paint-order: stroke fill; }
-        .loading-spinner { border: 4px solid #f3f3f3; border-top: 4px solid #4f46e5; border-radius: 50%; width: 40px; height: 40px; animate-spin; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .cartoon-btn:disabled { background: #94a3b8; cursor: not-allowed; transform: none; box-shadow: none; }
+        
+        /* 特效樣式 */
+        .streak-pop { animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .final-question-bg { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important; border-color: #d97706 !important; }
+        .final-text { color: #d97706; text-shadow: 0 0 10px rgba(217, 119, 6, 0.3); }
+        #rank-up-alert { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100; pointer-events: none; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .loading-spinner { border-4 border-slate-700 border-t-indigo-500 rounded-full w-12 h-12 animate-spin; }
     </style>
 </head>
 <body class="flex items-center justify-center p-4">
 
-    <!-- 載入螢幕 -->
+    <!-- 排名超越提示 -->
+    <div id="rank-up-alert" class="hidden">
+        <div class="bg-yellow-400 border-4 border-slate-900 px-6 py-3 rounded-full shadow-2xl animate__animated animate__bounceInDown">
+            <p class="text-slate-900 font-black text-lg flex items-center gap-2">
+                🚀 <span id="rank-alert-text">超越了對手！</span>
+            </p>
+        </div>
+    </div>
+
+    <!-- 初始載入 -->
     <div id="loading-screen" class="text-center flex flex-col items-center gap-4">
         <div class="loading-spinner"></div>
-        <p class="text-white font-black text-xl">正在同步商業資料庫...</p>
+        <p id="loading-msg" class="text-indigo-400 font-black text-xl animate-pulse">正在安全連線中...</p>
     </div>
 
     <!-- 大廳 -->
     <div id="lobby-view" class="hidden w-full max-w-md cartoon-panel p-8 space-y-6">
         <div class="text-center">
-            <h1 class="text-4xl font-black text-stroke text-white">BAFS 商業大賽</h1>
-            <p class="text-indigo-600 font-bold text-sm mt-1">同步連線模式 v1.2</p>
+            <h1 class="text-4xl font-black text-indigo-600">BAFS 決戰</h1>
+            <p class="text-slate-400 font-bold">同步對戰 · 無痕相容版</p>
         </div>
-
         <div class="space-y-4">
             <div class="space-y-1">
-                <label class="font-black text-slate-500 text-sm ml-1">參賽者暱稱</label>
-                <input type="text" id="player-name" placeholder="輸入名稱" class="w-full p-4 border-4 border-slate-800 rounded-2xl font-bold text-center outline-none focus:ring-4 ring-indigo-100">
+                <label class="font-black text-slate-500 text-sm ml-1">玩家名稱</label>
+                <input type="text" id="player-name" placeholder="輸入暱稱" class="w-full p-4 border-4 border-slate-800 rounded-2xl font-bold text-center outline-none focus:ring-4 ring-indigo-100">
+            </div>
+            
+            <div class="bg-indigo-50 border-4 border-slate-800 rounded-2xl p-4 flex justify-between items-center">
+                <span class="font-black text-slate-700">比賽題數</span>
+                <input type="number" id="question-count-input" min="1" max="35" value="10" class="w-20 border-2 border-slate-800 rounded-lg text-center font-black p-1">
             </div>
 
-            <div class="grid grid-cols-1 gap-3">
-                <div class="bg-indigo-50 border-4 border-slate-800 rounded-2xl p-3 flex justify-between items-center">
-                    <span class="font-black text-slate-700">設定題數</span>
-                    <input type="number" id="question-count-input" min="1" max="20" value="10" class="w-16 border-2 border-slate-800 rounded-lg text-center font-black">
-                </div>
-                <button id="btn-create" class="w-full cartoon-btn bg-indigo-500 py-4 text-xl font-black">建立新對決</button>
-            </div>
-
-            <div class="relative flex items-center py-2">
-                <div class="flex-grow border-t-4 border-slate-100"></div>
-                <span class="px-4 text-slate-400 font-bold">加入房間</span>
-                <div class="flex-grow border-t-4 border-slate-100"></div>
-            </div>
-
-            <div class="space-y-3">
-                <input type="text" id="join-code" placeholder="輸入 6 位代碼" maxlength="6" class="w-full p-4 border-4 border-slate-800 rounded-2xl font-black text-center uppercase tracking-[0.3em] outline-none">
-                <button id="btn-join" class="w-full cartoon-btn bg-emerald-400 text-slate-800 py-4 text-xl font-black">進入房間</button>
-            </div>
+            <button id="btn-create" class="w-full cartoon-btn bg-indigo-500 py-4 text-xl font-black">建立新對決</button>
+            <div class="relative flex items-center py-2"><div class="flex-grow border-t-2 border-slate-100"></div><span class="px-3 text-slate-300 font-bold">OR</span><div class="flex-grow border-t-2 border-slate-100"></div></div>
+            <input type="text" id="join-code" placeholder="輸入 6 位代碼" maxlength="6" class="w-full p-4 border-4 border-slate-800 rounded-2xl font-black text-center uppercase tracking-widest outline-none focus:border-emerald-500">
+            <button id="btn-join" class="w-full cartoon-btn bg-emerald-400 text-slate-800 py-4 text-xl font-black">加入比賽</button>
         </div>
     </div>
 
     <!-- 等待室 -->
-    <div id="waiting-view" class="hidden w-full max-w-md cartoon-panel p-10 space-y-8 text-center">
+    <div id="waiting-view" class="hidden w-full max-w-md cartoon-panel p-8 text-center space-y-6">
         <div>
-            <p class="text-slate-400 font-black text-xs uppercase">房間代碼</p>
-            <h2 id="display-room-code" class="text-6xl font-black text-indigo-600 font-mono tracking-widest">------</h2>
+            <p class="text-slate-400 font-black text-xs uppercase">邀請代碼</p>
+            <h2 id="display-room-code" class="text-6xl font-black text-indigo-600 tracking-tighter font-mono">------</h2>
         </div>
-        
-        <div class="bg-indigo-50 rounded-3xl p-6 border-4 border-indigo-100 min-h-[150px]">
-            <h3 class="text-xs font-black text-indigo-400 uppercase mb-4">待命選手 (<span id="player-count">0</span>)</h3>
-            <div id="player-list" class="grid grid-cols-2 gap-2"></div>
+        <div class="bg-slate-50 rounded-3xl p-6 border-2 border-slate-100">
+            <p id="player-count-text" class="text-xs font-black text-slate-400 mb-3 uppercase tracking-widest">準備中的玩家 (0)</p>
+            <div id="player-list" class="flex flex-wrap gap-2 justify-center"></div>
         </div>
-
         <div id="host-controls" class="hidden">
-            <button id="btn-start" class="w-full cartoon-btn bg-yellow-400 text-slate-800 py-5 text-2xl font-black">開始比賽</button>
+            <button id="btn-start" class="w-full cartoon-btn bg-yellow-400 text-slate-800 py-5 text-2xl font-black animate-pulse">全員到齊，開戰！</button>
         </div>
         <div id="guest-waiting" class="hidden">
-            <p class="font-black text-indigo-400 animate-pulse text-lg">等待主持人啟動...</p>
+            <p class="font-black text-indigo-400 animate-pulse italic">等待主持人發號施令...</p>
         </div>
     </div>
 
     <!-- 遊戲中 -->
     <div id="game-view" class="hidden w-full max-w-5xl space-y-4">
-        <div class="cartoon-panel p-3 bg-white border-2">
-            <div id="leaderboard" class="flex flex-nowrap overflow-x-auto gap-3 py-1"></div>
-        </div>
-        
+        <div id="leaderboard" class="flex gap-3 overflow-x-auto no-scrollbar py-2"></div>
+
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <div id="play-area" class="lg:col-span-3 cartoon-panel p-8 space-y-6">
-                <div class="flex justify-between items-center border-b-4 border-slate-50 pb-4">
-                    <span id="question-number" class="bg-indigo-600 text-white px-5 py-1 rounded-full font-black">Q1</span>
-                    <span class="text-indigo-300 font-bold italic">BAFS 賽事進行中</span>
+            <div id="play-area" class="lg:col-span-3 cartoon-panel p-6 lg:p-10 relative overflow-hidden transition-all duration-500">
+                <div class="flex justify-between items-center mb-8 border-b-2 border-slate-50 pb-4">
+                    <span id="question-number" class="bg-slate-800 text-white px-4 py-1 rounded-full font-black">Q1</span>
+                    <div id="streak-badge" class="hidden streak-pop bg-orange-500 text-white px-4 py-1 rounded-full font-black italic shadow-lg">
+                        STREAK × <span id="streak-count">0</span>
+                    </div>
                 </div>
-                
+
                 <div id="question-content">
-                    <h2 id="question-text" class="text-2xl lg:text-3xl font-black text-slate-800 mb-8">載入題目中...</h2>
+                    <h2 id="question-text" class="text-2xl lg:text-3xl font-black mb-8 leading-tight"></h2>
                     <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
                 </div>
 
-                <div id="wait-screen" class="hidden text-center py-20 bg-indigo-50 rounded-3xl border-4 border-dashed border-indigo-200">
-                    <p class="text-indigo-600 font-black text-2xl">答案已送出！</p>
-                    <p class="text-indigo-400 font-bold">請等待其他選手...</p>
+                <div id="wait-message" class="hidden py-20 text-center animate__animated animate__fadeIn">
+                    <div class="loading-spinner mx-auto mb-4 border-t-indigo-400"></div>
+                    <h3 class="text-2xl font-black text-indigo-600">已提交答案！</h3>
+                    <p class="text-slate-400 font-bold">請稍候，正監視其他選手的動向...</p>
                 </div>
 
-                <div id="rank-screen" class="hidden text-center py-10 space-y-6">
-                    <h3 class="text-4xl font-black text-indigo-600 italic">本題快報</h3>
-                    <div id="mid-rank-list" class="space-y-3 max-w-sm mx-auto"></div>
+                <div id="mid-rank-box" class="hidden py-10 text-center animate__animated animate__zoomIn">
+                    <h3 class="text-3xl font-black text-indigo-600 mb-6 italic">本題戰報</h3>
+                    <div id="mid-rank-list" class="max-w-sm mx-auto space-y-3"></div>
                 </div>
             </div>
 
             <div class="space-y-4">
-                <div class="cartoon-panel p-6 text-center bg-orange-50">
-                    <p class="text-orange-400 font-black text-xs uppercase">目前得分</p>
-                    <p id="score-display" class="text-5xl font-black text-orange-600">0</p>
+                <div class="cartoon-panel p-6 text-center bg-indigo-600 border-indigo-900">
+                    <p class="text-indigo-200 font-black text-xs">個人得分</p>
+                    <p id="my-score-display" class="text-5xl font-black text-white">0</p>
                 </div>
-                <div class="cartoon-panel p-6 text-center bg-indigo-50">
-                    <p class="text-indigo-400 font-black text-xs uppercase">目前排名</p>
-                    <p id="rank-display" class="text-6xl font-black text-indigo-600">#1</p>
+                <div class="cartoon-panel p-6 text-center bg-white">
+                    <p class="text-slate-400 font-black text-xs uppercase">目前排名</p>
+                    <p id="my-rank-display" class="text-6xl font-black text-indigo-600">#1</p>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- 結算 -->
-    <div id="results-view" class="hidden w-full max-w-md cartoon-panel p-10 text-center space-y-8">
-        <h2 class="text-4xl font-black text-indigo-600">總決賽結果</h2>
-        <div id="final-rankings" class="space-y-3"></div>
-        <button onclick="location.reload()" class="w-full cartoon-btn py-5 text-xl font-black">回大廳</button>
+    <div id="results-view" class="hidden w-full max-w-md cartoon-panel p-10 text-center space-y-8 relative">
+        <div id="winner-crown" class="animate__animated animate__bounceInDown">
+            <i class="fas fa-crown text-7xl text-yellow-400"></i>
+        </div>
+        <h2 class="text-4xl font-black text-indigo-600">榮耀時刻</h2>
+        <div id="final-rankings" class="space-y-4 text-left"></div>
+        <button onclick="location.reload()" class="w-full cartoon-btn py-5 text-xl font-black bg-indigo-600 text-white">返回大廳</button>
     </div>
 
     <script type="module">
@@ -148,8 +155,9 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
-        const APP_ID = "BAFS_FINAL_STABLE_V1";
+        const APP_ID = "BAFS_ULTIMATE_PVP_V1"; // 統一固定路徑
 
+        // 核心設定：無痕相容
         setPersistence(auth, inMemoryPersistence);
 
         const BANK = [
@@ -160,168 +168,241 @@
         ];
 
         let currentUser = null;
-        let roomCode = "";
+        let currentRoomCode = "";
         let isHost = false;
         let myScore = 0;
-        let unsub = null;
+        let streak = 0;
+        let lastRank = 1;
+        let unsubRoom = null;
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
+                showView('lobby-view');
                 document.getElementById('loading-screen').classList.add('hidden');
-                document.getElementById('lobby-view').classList.remove('hidden');
             } else {
-                signInAnonymously(auth).catch(() => alert("無法連線伺服器"));
+                signInAnonymously(auth).catch(() => {
+                    document.getElementById('loading-msg').innerText = "連線異常，請檢查網路。";
+                });
             }
         });
 
-        function show(id) {
+        function showView(id) {
             document.querySelectorAll('body > div').forEach(v => v.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
         }
 
-        // 建立
+        function vibrate(ms = 50) {
+            if (navigator.vibrate) navigator.vibrate(ms);
+        }
+
+        function triggerOvertake(targetName) {
+            const el = document.getElementById('rank-up-alert');
+            document.getElementById('rank-alert-text').innerText = `超越了 ${targetName}！`;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 2500);
+        }
+
+        // 建立房間
         document.getElementById('btn-create').onclick = async () => {
             const name = document.getElementById('player-name').value.trim();
-            if(!name) return alert("請輸入暱稱");
-            
+            const count = parseInt(document.getElementById('question-count-input').value) || 10;
+            if (!name) return alert("請輸入暱稱");
+
             const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-            roomCode = code;
+            currentRoomCode = code;
             isHost = true;
 
             const roomRef = ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}`);
             await set(roomRef, {
-                code, status: 'waiting', hostId: currentUser.uid, 
-                qCount: parseInt(document.getElementById('question-count-input').value),
-                currQ: 0, sync: 'asking',
-                players: { [currentUser.uid]: { name, score: 0, answered: false } }
+                code, status: 'waiting', hostId: currentUser.uid, currQ: 0, sync: 'asking', 
+                qCount: Math.min(count, BANK.length),
+                players: { [currentUser.uid]: { name, score: 0, answered: false, streak: 0 } }
             });
-            
+
             onDisconnect(ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}/players/${currentUser.uid}`)).remove();
-            startListening(code);
-            show('waiting-view');
+            initRoomListener(code);
+            showView('waiting-view');
             document.getElementById('host-controls').classList.remove('hidden');
+            document.getElementById('guest-waiting').classList.add('hidden');
         };
 
-        // 加入
+        // 加入房間 (含搜尋重試邏輯)
         document.getElementById('btn-join').onclick = async () => {
             const name = document.getElementById('player-name').value.trim();
             const code = document.getElementById('join-code').value.trim().toUpperCase();
-            if(!name || !code) return alert("請填寫名稱與代碼");
+            if (!name || code.length < 5) return alert("請輸入完整名稱與代碼");
+
+            document.getElementById('btn-join').disabled = true;
+            document.getElementById('btn-join').innerText = "搜尋中...";
 
             const roomRef = ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}`);
-            
-            // 加入緩衝嘗試，解決同步延遲
             let snap = await get(roomRef);
-            if(!snap.exists()) {
-                await new Promise(r => setTimeout(r, 1000));
+            
+            // 重試邏輯：避免時差
+            if (!snap.exists()) {
+                await new Promise(r => setTimeout(r, 800));
                 snap = await get(roomRef);
             }
 
-            if(!snap.exists()) return alert("房間代碼不存在，請重新確認！");
-            if(snap.val().status !== 'waiting') return alert("比賽已經開始了");
+            if (!snap.exists()) {
+                alert("找不到房間，請確認代碼是否正確");
+                document.getElementById('btn-join').disabled = false;
+                document.getElementById('btn-join').innerText = "加入比賽";
+                return;
+            }
+
+            const data = snap.val();
+            if (data.status !== 'waiting') {
+                alert("比賽已在進行中");
+                document.getElementById('btn-join').disabled = false;
+                document.getElementById('btn-join').innerText = "加入比賽";
+                return;
+            }
 
             await update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}/players`), {
-                [currentUser.uid]: { name, score: 0, answered: false }
+                [currentUser.uid]: { name, score: 0, answered: false, streak: 0 }
             });
-            
+
             onDisconnect(ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}/players/${currentUser.uid}`)).remove();
-            roomCode = code;
-            startListening(code);
-            show('waiting-view');
+            currentRoomCode = code;
+            initRoomListener(code);
+            showView('waiting-view');
             document.getElementById('guest-waiting').classList.remove('hidden');
+            document.getElementById('host-controls').classList.add('hidden');
+            document.getElementById('btn-join').disabled = false;
         };
 
-        function startListening(code) {
-            if(unsub) unsub();
-            unsub = onValue(ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}`), (s) => {
+        function initRoomListener(code) {
+            if (unsubRoom) unsubRoom();
+            unsubRoom = onValue(ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}`), (s) => {
                 const data = s.val();
-                if(!data) return;
-                
+                if (!data) return;
+
                 document.getElementById('display-room-code').innerText = code;
                 const players = Object.values(data.players || {});
-                document.getElementById('player-count').innerText = players.length;
+                document.getElementById('player-count-text').innerText = `準備中的玩家 (${players.length})`;
                 document.getElementById('player-list').innerHTML = players.map(p => `
-                    <div class="bg-white border-2 border-slate-800 p-2 rounded-xl font-bold text-sm">👤 ${p.name}</div>
+                    <div class="bg-indigo-100 text-indigo-700 px-4 py-1 rounded-full font-black animate__animated animate__fadeIn">
+                        ${p.name}
+                    </div>
                 `).join('');
 
-                if(data.status === 'playing') {
-                    show('game-view');
-                    handleGameSync(data, players);
-                } else if(data.status === 'finished') {
-                    handleFinal(players);
+                if (data.status === 'playing') {
+                    showView('game-view');
+                    syncGame(data, players);
+                } else if (data.status === 'finished') {
+                    showFinal(players);
                 }
             });
         }
 
-        function handleGameSync(data, players) {
+        function syncGame(data, players) {
             const me = data.players[currentUser.uid];
-            if(!me) return;
+            if (!me) return;
 
             const sorted = [...players].sort((a,b) => b.score - a.score);
-            document.getElementById('score-display').innerText = me.score;
-            document.getElementById('rank-display').innerText = `#${sorted.findIndex(p => p.name === me.name) + 1}`;
+            const myRank = sorted.findIndex(p => p.name === me.name) + 1;
+            
+            if (myRank < lastRank) {
+                const target = sorted[myRank] ? sorted[myRank].name : "對手";
+                triggerOvertake(target);
+            }
+            lastRank = myRank;
 
+            document.getElementById('my-score-display').innerText = me.score;
+            document.getElementById('my-rank-display').innerText = `#${myRank}`;
+            document.getElementById('streak-count').innerText = me.streak || 0;
+            document.getElementById('streak-badge').classList.toggle('hidden', (me.streak || 0) < 2);
+
+            // 排行榜橫桿
             document.getElementById('leaderboard').innerHTML = sorted.map((p,i) => `
-                <div class="flex-shrink-0 bg-white border-2 border-slate-800 px-3 py-1 rounded-full text-xs font-black">
-                    #${i+1} ${p.name}: ${p.score}
+                <div class="flex-shrink-0 flex items-center gap-2 bg-white border-2 border-slate-800 px-4 py-2 rounded-full shadow-sm">
+                    <span class="font-black text-indigo-600">${i+1}.</span>
+                    <span class="font-bold text-slate-800 truncate max-w-[80px]">${p.name}</span>
+                    <span class="bg-slate-100 px-2 rounded-full text-xs font-black">${p.score}</span>
                 </div>
             `).join('');
 
-            if(data.sync === 'asking') {
+            const panel = document.getElementById('play-area');
+            const isFinal = data.currQ === data.qCount - 1;
+
+            if (data.sync === 'asking') {
                 document.getElementById('question-content').classList.remove('hidden');
-                document.getElementById('rank-screen').classList.add('hidden');
-                renderQ(data.currQ, me.answered, data.qCount);
-                if(isHost && players.every(p => p.answered)) {
-                    setTimeout(() => update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${roomCode}`), { sync: 'ranking' }), 1000);
+                document.getElementById('mid-rank-box').classList.add('hidden');
+                
+                if (isFinal) {
+                    panel.classList.add('final-question-bg');
+                    document.getElementById('question-number').innerHTML = `<span class="final-text">🏆 FINAL QUESTION</span>`;
+                    document.getElementById('question-number').className = "bg-yellow-400 text-slate-900 px-6 py-2 rounded-full font-black animate-pulse";
+                } else {
+                    panel.classList.remove('final-question-bg');
+                    document.getElementById('question-number').innerText = `第 ${data.currQ + 1} 題`;
+                    document.getElementById('question-number').className = "bg-slate-800 text-white px-4 py-1 rounded-full font-black";
+                }
+
+                renderQuestion(data.currQ, me.answered);
+
+                if (isHost && players.every(p => p.answered)) {
+                    setTimeout(() => update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${currentRoomCode}`), { sync: 'ranking' }), 1200);
                 }
             } else {
                 document.getElementById('question-content').classList.add('hidden');
-                document.getElementById('wait-screen').classList.add('hidden');
-                document.getElementById('rank-screen').classList.remove('hidden');
-                document.getElementById('mid-rank-list').innerHTML = sorted.slice(0,5).map((p,i) => `
-                    <div class="p-3 bg-white border-4 border-slate-800 rounded-xl flex justify-between font-black">
-                        <span>#${i+1} ${p.name}</span><span>${p.score}</span>
+                document.getElementById('wait-message').classList.add('hidden');
+                document.getElementById('mid-rank-box').classList.remove('hidden');
+                
+                document.getElementById('mid-rank-list').innerHTML = sorted.slice(0, 5).map((p,i) => `
+                    <div class="flex justify-between p-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-black animate__animated animate__fadeInUp" style="animation-delay: ${i*0.1}s">
+                        <span>${i+1}. ${p.name}</span>
+                        <span class="text-indigo-600">${p.score} PT</span>
                     </div>
                 `).join('');
 
-                if(isHost) {
+                if (isHost) {
                     setTimeout(() => {
                         const next = data.currQ + 1;
-                        if(next < data.qCount) {
+                        if (next < data.qCount) {
                             const upds = { currQ: next, sync: 'asking' };
                             Object.keys(data.players).forEach(uid => upds[`players/${uid}/answered`] = false);
-                            update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${roomCode}`), upds);
+                            update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${currentRoomCode}`), upds);
                         } else {
-                            update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${roomCode}`), { status: 'finished' });
+                            update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${currentRoomCode}`), { status: 'finished' });
                         }
-                    }, 4000);
+                    }, 4500);
                 }
             }
         }
 
-        function renderQ(idx, answered, total) {
+        function renderQuestion(idx, answered) {
             const q = BANK[idx % BANK.length];
-            document.getElementById('question-number').innerText = `第 ${idx+1} / ${total} 題`;
             document.getElementById('question-text').innerText = q.q;
             const container = document.getElementById('options-container');
-            const waitScreen = document.getElementById('wait-screen');
+            const waitMsg = document.getElementById('wait-message');
 
-            if(answered) {
+            if (answered) {
                 document.getElementById('question-content').classList.add('hidden');
-                waitScreen.classList.remove('hidden');
+                waitMsg.classList.remove('hidden');
             } else {
                 document.getElementById('question-content').classList.remove('hidden');
-                waitScreen.classList.add('hidden');
+                waitMsg.classList.add('hidden');
                 container.innerHTML = '';
                 q.a.forEach((opt, i) => {
                     const btn = document.createElement('button');
-                    btn.className = "cartoon-btn bg-white text-slate-800 p-5 font-bold text-left border-4 border-slate-800 hover:bg-indigo-50";
-                    btn.innerText = `${String.fromCharCode(65+i)}. ${opt}`;
-                    btn.onclick = () => {
-                        myScore += (i === q.correct ? 100 : 0);
-                        update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${roomCode}/players/${currentUser.uid}`), {
-                            score: myScore, answered: true
+                    btn.className = "cartoon-btn bg-white text-slate-800 p-5 font-bold text-left border-4 border-slate-800 hover:scale-[1.02] transform transition-all leading-tight";
+                    btn.innerHTML = `<span class="bg-slate-800 text-white w-7 h-7 inline-flex items-center justify-center rounded-full mr-3 text-xs">${String.fromCharCode(65+i)}</span> ${opt}`;
+                    btn.onclick = async () => {
+                        const isCorrect = i === q.correct;
+                        vibrate(isCorrect ? 60 : 200);
+                        
+                        if (isCorrect) {
+                            streak++;
+                            myScore += (100 + (streak * 10)); 
+                        } else {
+                            streak = 0;
+                        }
+
+                        await update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${currentRoomCode}/players/${currentUser.uid}`), {
+                            score: myScore, answered: true, streak: streak
                         });
                     };
                     container.appendChild(btn);
@@ -330,15 +411,25 @@
         }
 
         document.getElementById('btn-start').onclick = () => {
-            update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${roomCode}`), { status: 'playing' });
+            update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${currentRoomCode}`), { status: 'playing' });
         };
 
-        function handleFinal(players) {
-            show('results-view');
+        function showFinal(players) {
+            showView('results-view');
             const sorted = [...players].sort((a,b) => b.score - a.score);
+            
+            // 噴發煙火
+            const end = Date.now() + 5000;
+            (function frame() {
+                confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#6366f1', '#facc15'] });
+                confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#6366f1', '#facc15'] });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+
             document.getElementById('final-rankings').innerHTML = sorted.map((p,i) => `
-                <div class="p-4 border-4 border-slate-800 rounded-2xl flex justify-between font-black ${i===0?'bg-yellow-300':''}">
-                    <span>#${i+1} ${p.name}</span><span>${p.score} 分</span>
+                <div class="p-4 border-4 border-slate-800 rounded-2xl flex justify-between font-black items-center ${i===0?'bg-yellow-400 scale-105 shadow-2xl':'bg-white'} animate__animated animate__backInLeft" style="animation-delay: ${i*0.2}s">
+                    <span class="text-xl">${i===0?'👑':i+1+'.'} ${p.name}</span>
+                    <span class="text-2xl">${p.score}</span>
                 </div>
             `).join('');
         }
