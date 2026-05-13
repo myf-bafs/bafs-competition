@@ -3,158 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BAFS 商業大賽 - 最終修正版</title>
+    <title>BAFS 商業大賽 - 穩定版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); min-height: 100vh; color: #1e293b; overflow-x: hidden; }
+        body { font-family: 'Noto Sans TC', sans-serif; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); min-height: 100vh; color: #1e293b; }
         .cartoon-panel { background: white; border: 4px solid #1e293b; border-radius: 2rem; box-shadow: 8px 8px 0px #1e293b; }
         .cartoon-btn { background: #6366f1; color: white; border: 3px solid #1e293b; border-radius: 1.25rem; box-shadow: 4px 4px 0px #1e293b; transition: all 0.1s; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .cartoon-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #1e293b; }
-        .cartoon-btn:disabled { background: #94a3b8; cursor: not-allowed; transform: none; box-shadow: none; border-color: #64748b; }
+        .cartoon-btn:disabled { background: #94a3b8; cursor: not-allowed; box-shadow: none; transform: none; }
         .hidden { display: none !important; }
         .text-stroke { -webkit-text-stroke: 1.5px #1e293b; paint-order: stroke fill; }
-        .loading-spinner { border-4 border-slate-200 border-t-indigo-600 rounded-full w-12 h-12 animate-spin; }
+        .loading-spinner { border: 4px solid #f3f3f3; border-top: 4px solid #4f46e5; border-radius: 50%; width: 40px; height: 40px; animate-spin; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="flex items-center justify-center p-4">
 
-    <!-- 初始載入 -->
+    <!-- 載入螢幕 -->
     <div id="loading-screen" class="text-center flex flex-col items-center gap-4">
         <div class="loading-spinner"></div>
-        <p id="loading-msg" class="text-white font-black text-xl">正在檢查商業伺服器...</p>
+        <p class="text-white font-black text-xl">正在同步商業資料庫...</p>
     </div>
 
     <!-- 大廳 -->
     <div id="lobby-view" class="hidden w-full max-w-md cartoon-panel p-8 space-y-6">
         <div class="text-center">
             <h1 class="text-4xl font-black text-stroke text-white">BAFS 商業大賽</h1>
-            <div class="mt-2 inline-block bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold">
-                ● 伺服器已連線
-            </div>
+            <p class="text-indigo-600 font-bold text-sm mt-1">同步連線模式 v1.2</p>
         </div>
 
         <div class="space-y-4">
             <div class="space-y-1">
-                <label class="font-black text-slate-500 text-sm ml-1">玩家名稱</label>
-                <input type="text" id="player-name" placeholder="請輸入暱稱" class="w-full p-4 border-4 border-slate-800 rounded-2xl font-bold text-center outline-none focus:ring-4 ring-indigo-100">
+                <label class="font-black text-slate-500 text-sm ml-1">參賽者暱稱</label>
+                <input type="text" id="player-name" placeholder="輸入名稱" class="w-full p-4 border-4 border-slate-800 rounded-2xl font-bold text-center outline-none focus:ring-4 ring-indigo-100">
             </div>
 
             <div class="grid grid-cols-1 gap-3">
-                <div class="bg-indigo-50 border-4 border-slate-800 rounded-2xl p-4 flex justify-between items-center">
-                    <span class="font-black text-slate-700">比賽題數</span>
-                    <input type="number" id="question-count-input" min="1" max="35" value="10" class="w-20 border-2 border-slate-800 rounded-lg text-center font-black p-1">
+                <div class="bg-indigo-50 border-4 border-slate-800 rounded-2xl p-3 flex justify-between items-center">
+                    <span class="font-black text-slate-700">設定題數</span>
+                    <input type="number" id="question-count-input" min="1" max="20" value="10" class="w-16 border-2 border-slate-800 rounded-lg text-center font-black">
                 </div>
-                <button id="btn-create" class="w-full cartoon-btn bg-indigo-500 py-4 text-xl font-black">
-                    <i class="fas fa-plus-circle mr-2"></i>建立新比賽
-                </button>
+                <button id="btn-create" class="w-full cartoon-btn bg-indigo-500 py-4 text-xl font-black">建立新對決</button>
             </div>
 
-            <div class="relative flex items-center py-4">
+            <div class="relative flex items-center py-2">
                 <div class="flex-grow border-t-4 border-slate-100"></div>
-                <span class="px-4 text-slate-400 font-bold">或加入他人房間</span>
+                <span class="px-4 text-slate-400 font-bold">加入房間</span>
                 <div class="flex-grow border-t-4 border-slate-100"></div>
             </div>
 
             <div class="space-y-3">
-                <input type="text" id="join-code" placeholder="請輸入 6 位代碼" maxlength="6" class="w-full p-4 border-4 border-slate-800 rounded-2xl font-black text-center uppercase tracking-[0.5em] outline-none focus:border-emerald-500">
-                <button id="btn-join" class="w-full cartoon-btn bg-emerald-400 text-slate-800 py-4 text-xl font-black">
-                    <i class="fas fa-sign-in-alt mr-2"></i>進入房間
-                </button>
+                <input type="text" id="join-code" placeholder="輸入 6 位代碼" maxlength="6" class="w-full p-4 border-4 border-slate-800 rounded-2xl font-black text-center uppercase tracking-[0.3em] outline-none">
+                <button id="btn-join" class="w-full cartoon-btn bg-emerald-400 text-slate-800 py-4 text-xl font-black">進入房間</button>
             </div>
         </div>
     </div>
 
     <!-- 等待室 -->
-    <div id="waiting-view" class="hidden w-full max-w-md cartoon-panel p-10 space-y-8 text-center relative">
+    <div id="waiting-view" class="hidden w-full max-w-md cartoon-panel p-10 space-y-8 text-center">
         <div>
-            <p class="text-slate-400 font-black text-xs uppercase mb-1">房間邀請代碼</p>
-            <h2 id="display-room-code" class="text-6xl font-black text-indigo-600 tracking-widest font-mono">------</h2>
+            <p class="text-slate-400 font-black text-xs uppercase">房間代碼</p>
+            <h2 id="display-room-code" class="text-6xl font-black text-indigo-600 font-mono tracking-widest">------</h2>
         </div>
         
-        <div id="player-status-card" class="bg-indigo-50 rounded-3xl p-6 border-4 border-indigo-100 min-h-[180px]">
-            <h3 class="text-xs font-black text-indigo-400 uppercase mb-4 tracking-widest flex justify-between">
-                <span>參賽選手</span>
-                <span id="player-count">0</span>
-            </h3>
+        <div class="bg-indigo-50 rounded-3xl p-6 border-4 border-indigo-100 min-h-[150px]">
+            <h3 class="text-xs font-black text-indigo-400 uppercase mb-4">待命選手 (<span id="player-count">0</span>)</h3>
             <div id="player-list" class="grid grid-cols-2 gap-2"></div>
         </div>
 
         <div id="host-controls" class="hidden">
-            <button id="btn-start" class="w-full cartoon-btn bg-yellow-400 text-slate-800 py-5 text-2xl font-black animate-pulse">
-                確認選手到齊，開始！
-            </button>
+            <button id="btn-start" class="w-full cartoon-btn bg-yellow-400 text-slate-800 py-5 text-2xl font-black">開始比賽</button>
         </div>
         <div id="guest-waiting" class="hidden">
-            <div class="flex flex-col items-center gap-3">
-                <div class="loading-spinner w-8 h-8"></div>
-                <p class="font-black text-indigo-400">正在等待主持人發號施令...</p>
-            </div>
+            <p class="font-black text-indigo-400 animate-pulse text-lg">等待主持人啟動...</p>
         </div>
     </div>
 
-    <!-- 遊戲中畫面 -->
-    <div id="game-view" class="hidden w-full max-w-6xl space-y-4">
-        <div class="cartoon-panel p-3 bg-slate-50 border-2">
-            <div id="leaderboard" class="flex flex-nowrap overflow-x-auto gap-4 py-1 no-scrollbar"></div>
+    <!-- 遊戲中 -->
+    <div id="game-view" class="hidden w-full max-w-5xl space-y-4">
+        <div class="cartoon-panel p-3 bg-white border-2">
+            <div id="leaderboard" class="flex flex-nowrap overflow-x-auto gap-3 py-1"></div>
         </div>
         
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <div id="main-play-area" class="lg:col-span-3 cartoon-panel p-8 space-y-6">
-                <div class="flex justify-between items-center border-b-4 border-slate-100 pb-4">
-                    <span id="question-number" class="bg-indigo-600 text-white px-6 py-2 rounded-full font-black text-xl">第 1 題</span>
-                    <div id="status-tag" class="text-indigo-400 font-black flex items-center gap-2 italic">
-                        <i class="fas fa-sync-alt animate-spin"></i> 同步中
-                    </div>
+            <div id="play-area" class="lg:col-span-3 cartoon-panel p-8 space-y-6">
+                <div class="flex justify-between items-center border-b-4 border-slate-50 pb-4">
+                    <span id="question-number" class="bg-indigo-600 text-white px-5 py-1 rounded-full font-black">Q1</span>
+                    <span class="text-indigo-300 font-bold italic">BAFS 賽事進行中</span>
                 </div>
                 
-                <!-- 題目內容 -->
-                <div id="question-display" class="space-y-6">
-                    <h2 id="question-text" class="text-2xl lg:text-4xl font-black text-slate-800 leading-tight"></h2>
+                <div id="question-content">
+                    <h2 id="question-text" class="text-2xl lg:text-3xl font-black text-slate-800 mb-8">載入題目中...</h2>
                     <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
                 </div>
 
-                <!-- 答題後等待 -->
-                <div id="wait-message" class="hidden text-center py-24 bg-indigo-50 rounded-3xl border-4 border-dashed border-indigo-200">
-                    <h3 class="text-3xl font-black text-indigo-600 mb-2">已提交答案！</h3>
-                    <p class="text-indigo-400 font-bold">請稍候，正等待其他玩家完成...</p>
+                <div id="wait-screen" class="hidden text-center py-20 bg-indigo-50 rounded-3xl border-4 border-dashed border-indigo-200">
+                    <p class="text-indigo-600 font-black text-2xl">答案已送出！</p>
+                    <p class="text-indigo-400 font-bold">請等待其他選手...</p>
                 </div>
 
-                <!-- 排名快報 -->
-                <div id="mid-rank-box" class="hidden text-center py-10 space-y-8">
-                    <div class="space-y-2">
-                        <i class="fas fa-chart-line text-5xl text-indigo-500"></i>
-                        <h3 class="text-4xl font-black text-slate-800">本題戰況</h3>
-                    </div>
-                    <div id="mid-rank-list" class="space-y-3 max-w-md mx-auto text-left"></div>
+                <div id="rank-screen" class="hidden text-center py-10 space-y-6">
+                    <h3 class="text-4xl font-black text-indigo-600 italic">本題快報</h3>
+                    <div id="mid-rank-list" class="space-y-3 max-w-sm mx-auto"></div>
                 </div>
             </div>
 
-            <!-- 個人狀態 -->
-            <div class="lg:col-span-1 space-y-6">
-                <div class="cartoon-panel p-8 text-center space-y-2 bg-orange-50">
-                    <p class="text-orange-400 font-black text-sm uppercase">我的分數</p>
-                    <p id="my-score-display" class="text-6xl font-black text-orange-600">0</p>
+            <div class="space-y-4">
+                <div class="cartoon-panel p-6 text-center bg-orange-50">
+                    <p class="text-orange-400 font-black text-xs uppercase">目前得分</p>
+                    <p id="score-display" class="text-5xl font-black text-orange-600">0</p>
                 </div>
-                <div class="cartoon-panel p-8 text-center space-y-2 bg-indigo-50">
-                    <p class="text-indigo-400 font-black text-sm uppercase">目前排名</p>
-                    <div id="my-rank-display" class="text-7xl font-black text-indigo-600">#1</div>
+                <div class="cartoon-panel p-6 text-center bg-indigo-50">
+                    <p class="text-indigo-400 font-black text-xs uppercase">目前排名</p>
+                    <p id="rank-display" class="text-6xl font-black text-indigo-600">#1</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 結算畫面 -->
+    <!-- 結算 -->
     <div id="results-view" class="hidden w-full max-w-md cartoon-panel p-10 text-center space-y-8">
-        <div>
-            <h2 class="text-4xl font-black text-indigo-600">總結算</h2>
-            <p class="text-slate-400 font-bold mt-2">辛苦了，各位同學！</p>
-        </div>
-        <div id="final-rankings" class="space-y-4"></div>
-        <button onclick="location.reload()" class="w-full cartoon-btn py-5 text-xl font-black bg-indigo-600 text-white">
-            回到大廳
-        </button>
+        <h2 class="text-4xl font-black text-indigo-600">總決賽結果</h2>
+        <div id="final-rankings" class="space-y-3"></div>
+        <button onclick="location.reload()" class="w-full cartoon-btn py-5 text-xl font-black">回大廳</button>
     </div>
 
     <script type="module">
@@ -175,7 +148,7 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
-        const APP_ID = "BAFS_FINAL_STABLE_V1"; // 固定的 APP ID 路徑
+        const APP_ID = "BAFS_FINAL_STABLE_V1";
 
         setPersistence(auth, inMemoryPersistence);
 
@@ -183,215 +156,171 @@
             {"q": "下列哪項是「管理」的正確定義？", "a": ["訂立組織目標，並制定最佳方案來達成這些目標的過程", "透過計劃、組織、領導和控制四項功能以達成組織目標的過程", "決定須要做哪些工作，以及如何把這些工作組合起來的過程", "引導、指示和激勵員工達成組織目標的過程"], "correct": 1},
             {"q": "計劃對企業十分重要，因為它可以： (1) 幫助管理人員尋找機會和應對挑戰 (2) 為員工提供指引 (3) 作為監控工作進度的標準", "a": ["只有 (1) 和 (2)", "只有 (1) 和 (3)", "只有 (2) 和 (3)", "(1)、(2) 和 (3)"], "correct": 3},
             {"q": "在良好目標的「SMART」規則中，「可量度」是指：", "a": ["目標必須清楚明確說明要達達到結果", "目標應可量化或以數字形式表達，以量度企業的實際表現", "目標應該既富挑戰性，又可憑着額外的努力達成", "目標應針對影響企業業績的關鍵因素"], "correct": 1},
-            {"q": "下列哪項是「前線管理人員」的工作例子？", "a": ["制定公司的願景和使命", "制定公司政策和策略", "處理顧客投訴", "訂立公司的整體目標和方向"], "correct": 2},
-            {"q": "關於「幕僚職權」，下列哪項描述是正確的？", "a": ["讓他可以向直屬下級（下屬）發出工作指令", "衍生出從屬關係", "擁有此職權的管理人員可以指導和監督下屬", "企業授予一些特定工作職位的權力，這些職位為其他部門提供支援、協助和意見"], "correct": 3},
-            {"q": "哪種領導風格的管理人員不讓下屬參與決策，並自行作出所有決策？", "a": ["獨裁式領導", "參與式領導", "自由放任式領導", "民主式領導"], "correct": 0},
-            {"q": "採用「參與式領導」的其中一項壞處是：", "a": ["員工失去工作動力", "降低營運效率", "為工作間帶來混難", "視野狹窄"], "correct": 1},
-            {"q": "「控制」過程的第一步是：", "a": ["量度實際表現", "比較實際表現與標準", "訂立表現標準", "分析差異並採取糾正行動"], "correct": 2}
+            {"q": "下列哪項是「前線管理人員」的工作例子？", "a": ["制定公司的願景和使命", "制定公司政策和策略", "處理顧客投訴", "訂立公司的整體目標和方向"], "correct": 2}
         ];
 
         let currentUser = null;
-        let currentRoomCode = "";
+        let roomCode = "";
         let isHost = false;
         let myScore = 0;
-        let unsubRoom = null;
+        let unsub = null;
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                showView('lobby-view');
                 document.getElementById('loading-screen').classList.add('hidden');
+                document.getElementById('lobby-view').classList.remove('hidden');
             } else {
-                try {
-                    await signInAnonymously(auth);
-                } catch (e) {
-                    document.getElementById('loading-msg').innerText = "連線失敗，請重新載入頁面";
-                }
+                signInAnonymously(auth).catch(() => alert("無法連線伺服器"));
             }
         });
 
-        function showView(id) {
+        function show(id) {
             document.querySelectorAll('body > div').forEach(v => v.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
         }
 
-        // 建立房間
+        // 建立
         document.getElementById('btn-create').onclick = async () => {
             const name = document.getElementById('player-name').value.trim();
-            const count = parseInt(document.getElementById('question-count-input').value) || 10;
-            if (!name) return alert("請先填寫玩家名稱");
-
+            if(!name) return alert("請輸入暱稱");
+            
             const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-            currentRoomCode = code;
+            roomCode = code;
             isHost = true;
 
             const roomRef = ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}`);
             await set(roomRef, {
-                code, status: 'waiting', hostId: currentUser.uid, qCount: Math.min(count, BANK.length),
+                code, status: 'waiting', hostId: currentUser.uid, 
+                qCount: parseInt(document.getElementById('question-count-input').value),
                 currQ: 0, sync: 'asking',
-                players: { [currentUser.uid]: { name, score: 0, answered: false } },
-                lastUpdated: Date.now()
+                players: { [currentUser.uid]: { name, score: 0, answered: false } }
             });
-
-            onDisconnect(ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}/players/${currentUser.uid}`)).remove();
             
-            initRoomListener(code);
-            showView('waiting-view');
+            onDisconnect(ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}/players/${currentUser.uid}`)).remove();
+            startListening(code);
+            show('waiting-view');
             document.getElementById('host-controls').classList.remove('hidden');
         };
 
-        // 加入房間
+        // 加入
         document.getElementById('btn-join').onclick = async () => {
             const name = document.getElementById('player-name').value.trim();
-            const codeInput = document.getElementById('join-code').value.trim().toUpperCase();
+            const code = document.getElementById('join-code').value.trim().toUpperCase();
+            if(!name || !code) return alert("請填寫名稱與代碼");
+
+            const roomRef = ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}`);
             
-            if (!name) return alert("請輸入玩家名稱");
-            if (codeInput.length < 5) return alert("代碼格式錯誤");
-
-            document.getElementById('btn-join').disabled = true;
-            document.getElementById('btn-join').innerText = "搜尋中...";
-
-            try {
-                const roomRef = ref(db, `artifacts/${APP_ID}/public/data/rooms/${codeInput}`);
-                
-                // 第一次嘗試抓取
-                let snap = await get(roomRef);
-                
-                // 如果找不到，給資料庫一個短暫同步時間並再次嘗試
-                if (!snap.exists()) {
-                    await new Promise(r => setTimeout(r, 800));
-                    snap = await get(roomRef);
-                }
-
-                if (!snap.exists()) {
-                    alert("【找不到房間】請確認代碼是否輸入正確，或該房間是否已關閉。");
-                    return;
-                }
-
-                const data = snap.val();
-                if (data.status !== 'waiting') return alert("對不起，比賽已經開始了！");
-
-                // 註冊加入
-                await update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${codeInput}/players`), {
-                    [currentUser.uid]: { name, score: 0, answered: false }
-                });
-
-                onDisconnect(ref(db, `artifacts/${APP_ID}/public/data/rooms/${codeInput}/players/${currentUser.uid}`)).remove();
-                
-                currentRoomCode = codeInput;
-                initRoomListener(codeInput);
-                showView('waiting-view');
-                document.getElementById('guest-waiting').classList.remove('hidden');
-                document.getElementById('host-controls').classList.add('hidden');
-            } catch (e) {
-                alert("加入失敗，請檢查網絡連線");
-            } finally {
-                document.getElementById('btn-join').disabled = false;
-                document.getElementById('btn-join').innerText = "進入房間";
+            // 加入緩衝嘗試，解決同步延遲
+            let snap = await get(roomRef);
+            if(!snap.exists()) {
+                await new Promise(r => setTimeout(r, 1000));
+                snap = await get(roomRef);
             }
+
+            if(!snap.exists()) return alert("房間代碼不存在，請重新確認！");
+            if(snap.val().status !== 'waiting') return alert("比賽已經開始了");
+
+            await update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}/players`), {
+                [currentUser.uid]: { name, score: 0, answered: false }
+            });
+            
+            onDisconnect(ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}/players/${currentUser.uid}`)).remove();
+            roomCode = code;
+            startListening(code);
+            show('waiting-view');
+            document.getElementById('guest-waiting').classList.remove('hidden');
         };
 
-        function initRoomListener(code) {
-            if (unsubRoom) unsubRoom();
-            unsubRoom = onValue(ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}`), (s) => {
+        function startListening(code) {
+            if(unsub) unsub();
+            unsub = onValue(ref(db, `artifacts/${APP_ID}/public/data/rooms/${code}`), (s) => {
                 const data = s.val();
-                if (!data) return;
-
+                if(!data) return;
+                
                 document.getElementById('display-room-code').innerText = code;
                 const players = Object.values(data.players || {});
                 document.getElementById('player-count').innerText = players.length;
                 document.getElementById('player-list').innerHTML = players.map(p => `
-                    <div class="bg-white border-2 border-slate-800 p-2 rounded-xl font-black text-sm flex items-center gap-2">
-                        <div class="w-2 h-2 bg-emerald-500 rounded-full"></div> ${p.name}
-                    </div>
+                    <div class="bg-white border-2 border-slate-800 p-2 rounded-xl font-bold text-sm">👤 ${p.name}</div>
                 `).join('');
 
-                if (data.status === 'playing') {
-                    showView('game-view');
-                    syncGame(data, players);
-                } else if (data.status === 'finished') {
-                    showFinal(players);
+                if(data.status === 'playing') {
+                    show('game-view');
+                    handleGameSync(data, players);
+                } else if(data.status === 'finished') {
+                    handleFinal(players);
                 }
             });
         }
 
-        function syncGame(data, players) {
+        function handleGameSync(data, players) {
             const me = data.players[currentUser.uid];
-            if (!me) return;
+            if(!me) return;
 
             const sorted = [...players].sort((a,b) => b.score - a.score);
-            document.getElementById('my-score-display').innerText = me.score;
-            document.getElementById('my-rank-display').innerText = `#${sorted.findIndex(p => p.name === me.name) + 1}`;
+            document.getElementById('score-display').innerText = me.score;
+            document.getElementById('rank-display').innerText = `#${sorted.findIndex(p => p.name === me.name) + 1}`;
 
-            // 排行榜橫桿
             document.getElementById('leaderboard').innerHTML = sorted.map((p,i) => `
-                <div class="flex-shrink-0 flex items-center gap-2 bg-white border-2 border-slate-800 px-3 py-1 rounded-full">
-                    <span class="text-xs font-black">#${i+1}</span>
-                    <span class="text-xs font-bold truncate max-w-[60px]">${p.name}</span>
-                    <span class="text-xs font-black text-indigo-600">${p.score}</span>
+                <div class="flex-shrink-0 bg-white border-2 border-slate-800 px-3 py-1 rounded-full text-xs font-black">
+                    #${i+1} ${p.name}: ${p.score}
                 </div>
             `).join('');
 
-            if (data.sync === 'asking') {
-                document.getElementById('question-display').classList.remove('hidden');
-                document.getElementById('mid-rank-box').classList.add('hidden');
-                renderQuestion(data.currQ, me.answered, data.qCount);
-
-                if (isHost && players.every(p => p.answered)) {
-                    setTimeout(() => {
-                        update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${currentRoomCode}`), { sync: 'ranking' });
-                    }, 800);
+            if(data.sync === 'asking') {
+                document.getElementById('question-content').classList.remove('hidden');
+                document.getElementById('rank-screen').classList.add('hidden');
+                renderQ(data.currQ, me.answered, data.qCount);
+                if(isHost && players.every(p => p.answered)) {
+                    setTimeout(() => update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${roomCode}`), { sync: 'ranking' }), 1000);
                 }
             } else {
-                document.getElementById('question-display').classList.add('hidden');
-                document.getElementById('wait-message').classList.add('hidden');
-                document.getElementById('mid-rank-box').classList.remove('hidden');
-                
-                document.getElementById('mid-rank-list').innerHTML = sorted.slice(0, 5).map((p,i) => `
-                    <div class="p-3 bg-white border-4 border-slate-800 rounded-2xl flex justify-between font-black items-center">
-                        <span class="flex items-center gap-2"><i>#${i+1}</i> ${p.name}</span>
-                        <span class="text-indigo-600">${p.score} PT</span>
+                document.getElementById('question-content').classList.add('hidden');
+                document.getElementById('wait-screen').classList.add('hidden');
+                document.getElementById('rank-screen').classList.remove('hidden');
+                document.getElementById('mid-rank-list').innerHTML = sorted.slice(0,5).map((p,i) => `
+                    <div class="p-3 bg-white border-4 border-slate-800 rounded-xl flex justify-between font-black">
+                        <span>#${i+1} ${p.name}</span><span>${p.score}</span>
                     </div>
                 `).join('');
 
-                if (isHost) {
+                if(isHost) {
                     setTimeout(() => {
                         const next = data.currQ + 1;
-                        if (next < data.qCount) {
+                        if(next < data.qCount) {
                             const upds = { currQ: next, sync: 'asking' };
                             Object.keys(data.players).forEach(uid => upds[`players/${uid}/answered`] = false);
-                            update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${currentRoomCode}`), upds);
+                            update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${roomCode}`), upds);
                         } else {
-                            update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${currentRoomCode}`), { status: 'finished' });
+                            update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${roomCode}`), { status: 'finished' });
                         }
                     }, 4000);
                 }
             }
         }
 
-        function renderQuestion(idx, answered, total) {
+        function renderQ(idx, answered, total) {
             const q = BANK[idx % BANK.length];
-            document.getElementById('question-number').innerText = `第 ${idx + 1} / ${total} 題`;
+            document.getElementById('question-number').innerText = `第 ${idx+1} / ${total} 題`;
             document.getElementById('question-text').innerText = q.q;
-            
             const container = document.getElementById('options-container');
-            const waitMsg = document.getElementById('wait-message');
+            const waitScreen = document.getElementById('wait-screen');
 
-            if (answered) {
-                document.getElementById('question-display').classList.add('hidden');
-                waitMsg.classList.remove('hidden');
+            if(answered) {
+                document.getElementById('question-content').classList.add('hidden');
+                waitScreen.classList.remove('hidden');
             } else {
-                document.getElementById('question-display').classList.remove('hidden');
-                waitMsg.classList.add('hidden');
+                document.getElementById('question-content').classList.remove('hidden');
+                waitScreen.classList.add('hidden');
                 container.innerHTML = '';
                 q.a.forEach((opt, i) => {
                     const btn = document.createElement('button');
-                    btn.className = "cartoon-btn bg-white text-slate-800 p-6 font-bold text-left border-4 border-slate-800 hover:bg-indigo-50 leading-snug";
-                    btn.innerHTML = `<span class="bg-slate-800 text-white w-7 h-7 inline-flex items-center justify-center rounded-full mr-3 text-sm">${String.fromCharCode(65+i)}</span> ${opt}`;
-                    btn.onclick = async () => {
-                        const correct = i === q.correct;
-                        myScore += (correct ? 100 : 0);
-                        await update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${currentRoomCode}/players/${currentUser.uid}`), {
+                    btn.className = "cartoon-btn bg-white text-slate-800 p-5 font-bold text-left border-4 border-slate-800 hover:bg-indigo-50";
+                    btn.innerText = `${String.fromCharCode(65+i)}. ${opt}`;
+                    btn.onclick = () => {
+                        myScore += (i === q.correct ? 100 : 0);
+                        update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${roomCode}/players/${currentUser.uid}`), {
                             score: myScore, answered: true
                         });
                     };
@@ -401,15 +330,15 @@
         }
 
         document.getElementById('btn-start').onclick = () => {
-            update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${currentRoomCode}`), { status: 'playing' });
+            update(ref(db, `artifacts/${APP_ID}/public/data/rooms/${roomCode}`), { status: 'playing' });
         };
 
-        function showFinal(players) {
-            showView('results-view');
+        function handleFinal(players) {
+            show('results-view');
             const sorted = [...players].sort((a,b) => b.score - a.score);
             document.getElementById('final-rankings').innerHTML = sorted.map((p,i) => `
-                <div class="p-4 border-4 border-slate-800 rounded-2xl flex justify-between font-black ${i===0?'bg-yellow-300 scale-105 shadow-xl':'bg-white'}">
-                    <span>${i===0?'👑':i+1+'.'} ${p.name}</span><span>${p.score} 分</span>
+                <div class="p-4 border-4 border-slate-800 rounded-2xl flex justify-between font-black ${i===0?'bg-yellow-300':''}">
+                    <span>#${i+1} ${p.name}</span><span>${p.score} 分</span>
                 </div>
             `).join('');
         }
